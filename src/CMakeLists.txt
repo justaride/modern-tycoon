@@ -116,6 +116,10 @@ add_files(
     company_base.h
     company_cmd.cpp
     company_cmd.h
+    company_exchange.cpp
+    company_exchange_base.h
+    company_exchange_func.h
+    company_exchange_type.h
     company_func.h
     company_gui.cpp
     company_gui.h

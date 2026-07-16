@@ -2,11 +2,13 @@
 
 This is the source-level handoff for Phase 2. It maps the architecture contract onto the current OpenTTD tree at baseline `5b9f18d8fd0a16f5022c0351b5e3590852d24745`.
 
-The first native commit must be compile-only and unreachable from gameplay. It establishes types, deterministic arithmetic, conservation helpers, and tests without changing commands, settings, saves, timers, UI, or company lifecycle behavior.
+The first native commit is compile-only and unreachable from gameplay. It establishes types, deterministic arithmetic, conservation helpers, and tests without changing commands, settings, saves, timers, UI, or company lifecycle behavior.
+
+Status on 2026-07-16: this first slice is implemented and passes nine focused cases (567,573 assertions) plus the full 107-test matrix on Apple Silicon macOS. Everything after the local exit gate below remains an implementation map, not a feature claim; supported-platform CI is still pending.
 
 ## Commit 1: type and arithmetic spine
 
-Add:
+Implemented:
 
 - `src/company_exchange_type.h`: `SecurityID`, `HoldingID`, `SecurityKind`, `ListingStatus`, `TradeSide`, the signed 64-bit 1/256-Money fixed-point contract, 10,000 equity units, 2,500-unit holder cap, and 100-unit initial UI lot.
 - `src/company_exchange_base.h`: `SecurityPool`, `HoldingPool`, and their pool items. Persist aggregate `Money cost_basis`; derive display averages. Proportional sale allocation has an explicit remainder rule so cost basis cannot disappear through rounding.
@@ -16,12 +18,14 @@ Add:
 
 Register the core files in `src/CMakeLists.txt` and the test in `src/tests/CMakeLists.txt`.
 
-Exit gate:
+Local exit gate, met on Apple Silicon macOS:
 
-- feature is unreachable at runtime;
+- no gameplay path can create or use a security or holding;
 - no savegame or command number changes;
-- feature-off behavior is literally unchanged;
-- all existing tests plus the new pure tests pass on every supported platform.
+- feature-off gameplay is unchanged; the two empty normal pools add only registration and reset traversal;
+- all existing tests plus the new pure tests pass locally.
+
+Still required before any gameplay command can reach the pools: enforce one live listing per issuer and one holding per `(security, holder)`, validate enum/issuer/generation domains, delete every dependent holding before a security, and cover company/security ID reuse plus pool-wide unit/cash invariants. The compile-only slice deliberately has no creation path, lifecycle cascade, save validator, or after-load repair, so it must remain unreachable until those guards and supported-platform CI exist.
 
 ## Commands and synchronized settlement
 

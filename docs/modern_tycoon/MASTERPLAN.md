@@ -189,6 +189,8 @@ This workstream begins during Phase 0 and releases incrementally.
 
 The initial GameScript lives at [`extensions/modern_tycoon_gs`](../../extensions/modern_tycoon_gs/README.md). It intentionally validates rules and UX cheaply before native state is added. Its virtual ledger is not the final C++ ownership model.
 
+The first native Phase 2 spine is also present: typed security/holding pools and pure checked valuation/settlement/conservation helpers with focused tests. It is intentionally unreachable—there are no exchange commands, settings, save chunks, timers, or GUI hooks yet. The exact next-file map is in [NATIVE_MVP_FILEMAP.md](NATIVE_MVP_FILEMAP.md).
+
 Primary upstream references:
 
 - <https://github.com/OpenTTD/OpenTTD/blob/master/CONTRIBUTING.md>

@@ -4,6 +4,8 @@ Modern Tycoon is an independent OpenTTD modernization program: a compatible fork
 
 The project starts with a playable market laboratory and grows toward company and industry finance, a structured newspaper, richer economic cycles and contracts, modern vehicles, fictional future transport, high-resolution art, contemporary UX, and measured performance work.
 
+The current branch includes both the playable GameScript laboratory and an intentionally unreachable native C++ type/arithmetic/conservation spine. The latter is the tested base for synchronized commands and save chunks; it is not yet a native in-game exchange.
+
 Start here:
 
 - [Masterplan](docs/modern_tycoon/MASTERPLAN.md)

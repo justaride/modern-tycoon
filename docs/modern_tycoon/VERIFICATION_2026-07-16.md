@@ -17,11 +17,25 @@ ctest --test-dir build --output-on-failure
 Result:
 
 - `openttd` and `openttd_test` built successfully;
-- all 98 of 98 CTest cases passed;
+- all 107 of 107 CTest cases passed;
 - the four null-driver scripted regressions passed;
-- the final committed canonical-path full-suite run completed 98 of 98 tests in about two seconds after regenerating Ninja dependency metadata damaged by the iCloud-to-local move.
+- the final canonical-path full-suite run completed in about two seconds after regenerating Ninja dependency metadata damaged by the iCloud-to-local move.
 
 The linker warned that the locally installed Homebrew PNG and LZO libraries target a newer macOS deployment version than OpenTTD's configured macOS 11 minimum. This did not fail build or test, but release binaries need a clean, intentionally versioned dependency toolchain.
+
+## Native exchange spine
+
+The first native Phase 2 slice is compiled but deliberately unreachable from gameplay. It adds 32-bit `SecurityID`/`HoldingID` pools, sparse holdings with aggregate cost basis, deterministic pool-index lookup, a signed 1/256-Money price contract, and portable checked integer helpers for valuation, monthly movement, bid/ask spread, fees, buy/sell settlement, proportional cost allocation, holder caps, and ledger conservation.
+
+Executed proof:
+
+- nine focused Catch2/CTest cases passed with 567,573 assertions, including property-style cost-basis remainder coverage, structurally invalid settlement rejection, and a non-zero conserved transition whose valid account aggregate exceeds `int64` summation range;
+- the full matrix passed 107 of 107 cases;
+- a 100,000-tick clean null-driver game using `/dev/null` as config exited successfully with no GameScript, AI, or NewGRF loaded;
+- the existing 150,000-tick Modern Tycoon GameScript/content soak still passed after linking the native spine;
+- source inspection confirms there are no new command IDs, settings, economy timers, save chunks, windows, company lifecycle hooks, or script APIs.
+
+The global pools are empty and normal-reset-managed. They add inert pool registration/reset traversal, so “byte-for-byte/literally unchanged runtime” and cross-platform behavior are not claimed. No security can be created by gameplay yet, so this is Apple Silicon type/arithmetic/conservation proof rather than a native playable market.
 
 ## GameScript proof
 
@@ -60,6 +74,7 @@ The OpenTTD SDL window appeared as a running `org.openttd.openttd` application, 
 - No existing player save has been opened with this fork.
 - No live iCloud profile configuration has been activated or rewritten.
 - The Story Book UI has not yet received a visual/manual QA pass.
-- Native exchange state, multiplayer determinism, industry balance sheets, and new vehicle sprites remain planned work, not implemented features.
+- Native exchange commands, persistence, UI, multiplayer determinism, industry balance sheets, and new vehicle sprites remain planned work, not implemented features.
+- Native pool uniqueness, issuer/holder deletion cascades, generation/ID reuse safety, pool-wide conservation, malformed-save validation, and supported-platform CI are not yet implemented or proven.
 
 SPDX-License-Identifier: GPL-2.0-only

@@ -91,8 +91,12 @@ target cap = max(minimum cap,
                          +400% of net value))
 
 monthly movement = 25% of the gap toward target,
-                   capped to +/-10% before trade impact
+                   capped to +/- max(floor(10% of the current quote),
+                                     one 1/256-Money tick)
+                   before trade impact
 ```
+
+The one-tick floor is the explicit fixed-point lattice rule: quotes below ten ticks can otherwise become permanently immobile. A later listing policy may impose a higher minimum quote, but it must not silently change this rounding behavior.
 
 - Store 60 monthly OHLCV bars.
 - On deletion/bankruptcy: freeze, calculate recovery, pay holders in stable order, delist, then release references.
