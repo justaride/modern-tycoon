@@ -17,6 +17,7 @@ Start here:
 - [Vehicle and art contract](docs/modern_tycoon/VEHICLES_AND_ART.md)
 - [Curated content playtest](docs/modern_tycoon/CURATED_CONTENT.md)
 - [Playable GameScript prototype](extensions/modern_tycoon_gs/README.md)
+- [Nordlys Air, the first AI player](extensions/nordlys_air/README.md)
 
 This work intentionally remains separate from the official OpenTTD contribution path. Official OpenTTD prioritizes a stable, classic-compatible core and explicitly does not accept AI-generated code. Modern Tycoon is therefore maintained as its own GPL-2.0 fork; no generated change from this repository should be submitted upstream.
 
