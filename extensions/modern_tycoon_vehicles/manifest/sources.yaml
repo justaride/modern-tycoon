@@ -1,0 +1,19 @@
+# Source records. None of these are copied into the repository.
+# SPDX-License-Identifier: GPL-2.0-only
+- source_id: MT-S-000001
+  title: Dual-mode freight locomotive archetype (general engineering facts)
+  supports: >-
+    Existence of four-axle freight locomotives that combine overhead-electric
+    and diesel traction, introduced in the mid 2010s; power and speed bands.
+  status: pending  # dated, citable sources still to be recorded before release
+- source_id: MT-S-000002
+  title: Four-axle open bulk wagon archetype (general engineering facts)
+  supports: Body type, axle count and role of open bulk wagons.
+  status: pending
+- source_id: MT-S-000003
+  title: OpenGFX 8.0 base set, train sprite headers 0x0BB1-0x0BB8 (GPL-2.0)
+  supports: >-
+    Sprite anchor facts only (width, height, x/y offset per direction),
+    measured by tools/measure_anchors.py so our sprites sit on track like the
+    base set. No pixel data read or used.
+  status: reference-only

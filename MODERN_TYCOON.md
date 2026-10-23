@@ -15,6 +15,8 @@ Start here:
 - [Current status](docs/modern_tycoon/STATUS.md)
 - [Verified baseline report](docs/modern_tycoon/VERIFICATION_2026-07-16.md)
 - [Vehicle and art contract](docs/modern_tycoon/VEHICLES_AND_ART.md)
+- [Visual direction](docs/modern_tycoon/VISUAL_DIRECTION.md)
+- [Modern Tycoon Trains, the first original vehicles](extensions/modern_tycoon_vehicles/README.md)
 - [Curated content playtest](docs/modern_tycoon/CURATED_CONTENT.md)
 - [Playable GameScript prototype](extensions/modern_tycoon_gs/README.md)
 - [Nordlys Air, the first AI player](extensions/nordlys_air/README.md)
