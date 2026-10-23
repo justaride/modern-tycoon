@@ -1,0 +1,10 @@
+##grflangid 0x2f
+
+STR_GRF_NAME            :Modern Tycoon tog (utviklingsversjon)
+STR_GRF_DESC            :{ORANGE}Modern Tycoon tog{}{BLACK}De første egne kjøretøyene i Modern Tycoon. Oppdiktede design, tegnet med kode. Utviklingsversjon: ikke godkjent for utgivelse.{}{}Lisens: GPL v2
+STR_GRF_URL             :https://github.com/justaride/modern-tycoon
+
+STR_NAME_TINDE_DM6      :Tinde DM6 tomodus
+STR_INFO_TINDE_DM6      :Oppdiktet design etter en moderne arketype: et godslokomotiv for både strøm og diesel. Kjører på vanlig og elektrifisert spor.
+STR_NAME_TINDE_HOPPER   :Tinde bulkvogn
+STR_INFO_TINDE_HOPPER   :Åpen bulkvogn for kull, malm, korn og annen bulklast.

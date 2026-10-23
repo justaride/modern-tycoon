@@ -70,7 +70,8 @@ function MT_Percent(bp)
 /* Routine reports fill sections but never lead an edition while there is other news. */
 MT_ROUTINE_TEMPLATES <- {
     market_movers = true, market_close = true, rival_profile = true, cargo_leader = true,
-    dividend = true, distribution = true, industry_listed = true, industry_close_unlisted = true
+    dividend = true, distribution = true, industry_listed = true, industry_close_unlisted = true,
+    market_quarter = true, production_boom = true, production_slump = true
 };
 
 function MT_ShortText(text)
@@ -94,6 +95,8 @@ function MT_RenderEvent(event)
     switch (event.template) {
         case "exchange_open":   return "The Modern Tycoon Exchange opens with " + p[0] + " listed securities.";
         case "company_listed":  return p[0] + " lists on the exchange at " + MT_Money(p[1]) + " per 1% lot.";
+        case "company_ipo_planned": return p[0] + " is quoted on the exchange; its shares open for trading in " + p[1] + ", after a track record.";
+        case "company_ipo":     return p[0] + " opens for trading at " + MT_Money(p[1]) + " per 1% lot (fair value " + MT_Money(p[2]) + ").";
         case "industry_listed": return p[0] + " receives an exchange listing tied to transported production.";
         case "delisted":        return p[0] + " is delisted; holders are paid the final quote of " + MT_Money(p[1]) + " per lot.";
         case "dividend":        return p[0] + " declares a quarterly dividend of " + MT_Money(p[1]) + " per 1% lot.";
@@ -116,6 +119,15 @@ function MT_RenderEvent(event)
         case "rival_entry":     return p[0] + " enters " + p[1] + " with " + p[2] + " " + p[3] + ".";
         case "rival_growth":    return p[0] + " adds " + p[1] + " " + p[2] + " (" + p[3] + " in service).";
         case "cargo_leader":    return p[0] + " delivered the most cargo last quarter: " + p[1] + " units.";
+        case "market_quarter":
+            return "Quarter in review: " + p[0] + " gained most (" + MT_Percent(p[1]) + "), " + p[2] + " fell most (" +
+                MT_Percent(p[3]) + "). " + p[4] + " securities rose, " + p[5] + " fell.";
+        case "results_beat":    return p[0] + " beats expectations: quarterly profit " + MT_Money(p[1]) + " against " + MT_Money(p[2]) + " expected.";
+        case "results_miss":    return p[0] + " misses expectations: quarterly profit " + MT_Money(p[1]) + " against " + MT_Money(p[2]) + " expected.";
+        case "quarterly_loss":  return p[0] + " reports a quarterly loss of " + MT_Money(p[1]) + "; the shares are marked down.";
+        case "closure_warning": return p[0] + " warns it will close; its shares slump.";
+        case "production_boom": return p[0] + " output jumps to " + p[1] + " units (normally " + p[2] + ").";
+        case "production_slump": return p[0] + " output drops to " + p[1] + " units (normally " + p[2] + ").";
         case "legacy":          return p[0];
     }
     return "[" + event.template + "]";
@@ -135,6 +147,8 @@ function MT_RenderAggregate(template, events)
 
     switch (template) {
         case "company_listed":  return count + " companies list on the exchange: " + named + ".";
+        case "company_ipo_planned": return count + " new companies are quoted ahead of trading: " + named + ".";
+        case "company_ipo":     return count + " companies open for trading: " + named + ".";
         case "industry_listed": return count + " industries receive exchange listings: " + named + ".";
         case "industry_open":   return count + " new industries open, including " + named + ".";
         case "industry_close_unlisted": return count + " unlisted industries have closed.";
@@ -146,6 +160,10 @@ function MT_RenderAggregate(template, events)
                 "; the richest is " + best.params[0] + " at " + MT_Money(best.params[1]) + " per lot.";
         }
         case "rival_growth":    return count + " expansion reports: " + named + " are growing their fleets.";
+        case "results_beat":    return count + " companies beat expectations: " + named + ".";
+        case "results_miss":    return count + " companies miss expectations: " + named + ".";
+        case "production_boom": return count + " industries report output jumps: " + named + ".";
+        case "production_slump": return count + " industries report output drops: " + named + ".";
     }
     return count + " reports: " + named + ".";
 }

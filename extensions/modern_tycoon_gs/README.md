@@ -10,7 +10,8 @@ Version 3 provides:
 - transaction fees, cost basis, realised/unrealised results, and dividends;
 - quarterly industry distributions tied to transported cargo;
 - **The Transport Ledger**, a structured newspaper (see below);
-- save/load support for listings, holdings, prices, portfolios, the news journal and the edition archive;
+- deterministic share pricing ([pricing.nut](pricing.nut)): a smoothed fair value, a growth premium, a mean-reverting market mood with bounded noise, and reactions to quarterly results, losses, financial trouble and raw-industry output; the Ledger reports results that beat or miss expectations and each quarter's winners and losers;
+- save/load support for listings, holdings, prices, pricing state, portfolios, the news journal and the edition archive;
 - merger portfolio transfer, inherited self-share settlement, pending-credit retry, and v1/v2-save migration.
 
 ## The Transport Ledger
@@ -41,7 +42,7 @@ GameScript balance commands and `Save()` are separate engine callbacks, so this 
 
 ## Tests
 
-See [test/README.md](test/README.md). `test/market_test.sh all` runs the gate 1 merger and delisting fixtures, a ten-year newspaper run, schema 2 migration and the original soak.
+See [test/README.md](test/README.md). `test/market_test.sh all` runs the gate 1 merger and delisting fixtures, a ten-year newspaper run, schema 2 and 3 migration, the pricing and replay checks, and the original soak.
 
 ## Developer smoke test
 

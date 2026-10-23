@@ -426,6 +426,15 @@ A vehicle is release-ready only when:
 - Compatibility, deterministic multiplayer, save/load, visual, and performance gates pass on the pinned matrix.
 - The release notes distinguish implemented content from later roster targets and list known NewGRF conflicts honestly.
 
+## Implementation log
+
+- 2026-10-23: first archetype pair in `extensions/modern_tycoon_vehicles` (development preview, not release-ready):
+  `mttr_rail_2016_dualmode_freight` (Tinde DM6, contemporary archetype, freight) and
+  `mttr_rail_2016_bulk_hopper` (Tinde bulk hopper). They extend the roster above; the
+  numeric IDs live in `manifest/ids.yaml`. Sprites are drawn procedurally from model
+  source files (see [VISUAL_DIRECTION.md](VISUAL_DIRECTION.md)); their provenance,
+  visual and legal reviews are `pending`, and the generated `.grf` is not committed.
+
 ## Primary implementation references
 
 - OpenTTD NewGRF development overview: <https://wiki.openttd.org/en/Development/NewGRF/>
