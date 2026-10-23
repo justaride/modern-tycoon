@@ -9,7 +9,7 @@
 #   delist   Gate 1: a bankrupt company closes; delisting payouts and released lots.
 #   news     A ten-year game with a route-building AI; checks the newspaper is
 #            useful and not spammy, then reloads the save.
-#   migrate  A schema 2 save from origin/main loads into the current script.
+#   migrate  A schema 2 save from the last schema 2 commit (SCHEMA2_COMMIT) loads into the current script.
 #   soak     The original 150,000-tick soak with the built-in buy/distribution/sell self-test.
 #   all      Everything above.
 #
@@ -169,14 +169,16 @@ $ai_lines"
 migrate() {
 	local base; base="$(new_profile migrate)"
 	mkdir -p "$base/old_gs"
-	git -C "$ROOT" archive origin/main extensions/modern_tycoon_gs | tar -x -C "$base/old_gs"
-	grep -q 'GetVersion()     { return 2; }' "$base/old_gs/extensions/modern_tycoon_gs/info.nut" || { echo "FAIL: origin/main is not schema 2" >&2; exit 1; }
+	# Pinned: main moved to schema 3 when the Ledger merged, so origin/main no longer has the old script.
+	local old="${SCHEMA2_COMMIT:-72e60f2ef}"
+	git -C "$ROOT" archive "$old" extensions/modern_tycoon_gs | tar -x -C "$base/old_gs"
+	grep -q 'GetVersion()     { return 2; }' "$base/old_gs/extensions/modern_tycoon_gs/info.nut" || { echo "FAIL: $old is not schema 2" >&2; exit 1; }
 	ln -s "$base/old_gs/extensions/modern_tycoon_gs" "$base/profile/game/modern_tycoon_gs"
 	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
 	write_cfg "$base" 1995 "\"Modern Tycoon Test Company\" =
 \"Modern Tycoon Test Company\" =" "$GS_DEFAULTS,news_frequency=2,developer_self_test=0"
 
-	echo "== migrate: one year with the schema 2 script from origin/main"
+	echo "== migrate: one year with the schema 2 script from ${SCHEMA2_COMMIT:-72e60f2ef}"
 	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 12)) -g
 	check_clean "$base/run1.log"
 	echo "== migrate: load that save with the current script"
