@@ -124,12 +124,31 @@ class TileBuild:
 			out.append(f'switch(FEAT_INDUSTRYTILES, SELF, sw_{self.name}, animation_frame) {{\n' + '\n'.join(cases) + f'\n\tsl_{self.name}_0;\n}}')
 			graphics = f'sw_{self.name}'
 		anim = ''
+		callbacks = ''
 		if self.spec['anim']:
 			frames, speed = self.spec['anim']
+			logic = self.spec.get('logic') or {'loop': True}
+			triggers = 'bitmask(ANIM_TRIGGER_INDTILE_RECEIVED_CARGO)' if logic.get('start_on_cargo') else '0'
 			anim = f"""
-		animation_info: [ANIMATION_LOOPING, {frames}];
+		animation_info: [{'ANIMATION_LOOPING' if logic['loop'] else 'ANIMATION_NON_LOOPING'}, {frames}];
 		animation_speed: {speed};
-		animation_triggers: 0;"""
+		animation_triggers: {triggers};"""
+			if not logic['loop']:
+				# Idle frames hold still; cargo arriving at an idle tile starts one run.
+				idle = logic['idle_frames']
+				idle_cases = '\n\t'.join(f"{i}: return {logic['start_frame']};" for i in idle)
+				out.append(f"""// Cargo delivered: start a run if idle, otherwise let the current run finish.
+switch(FEAT_INDUSTRYTILES, SELF, sw_{self.name}_control, animation_frame) {{
+	{idle_cases}
+	return CB_RESULT_DO_NOTHING;
+}}
+
+// The idle frame stops the animation (also right after construction).
+switch(FEAT_INDUSTRYTILES, SELF, sw_{self.name}_next, animation_frame) {{
+	{idle[0]}: return CB_RESULT_STOP_ANIMATION;
+	return CB_RESULT_NEXT_FRAME;
+}}""")
+				callbacks = f'anim_control: sw_{self.name}_control; anim_next_frame: sw_{self.name}_next; '
 		acc = ', '.join(f'[{c}, 8]' for c in accepts)
 		out.append(f"""item(FEAT_INDUSTRYTILES, tile_{self.name}, {tile_numeric_id}) {{
 	property {{
@@ -137,7 +156,7 @@ class TileBuild:
 		land_shape_flags: bitmask(LSF_ONLY_ON_FLAT_LAND);
 		accepted_cargos: [{acc}];{anim}
 	}}
-	graphics {{ {graphics}; }}
+	graphics {{ {callbacks}{graphics}; }}
 }}""")
 		return '\n\n'.join(out)
 

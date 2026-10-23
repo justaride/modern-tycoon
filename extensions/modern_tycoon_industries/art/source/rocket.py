@@ -2,9 +2,10 @@
 
 Fictional design: a white booster that lands on its own legs, topped by a
 pod that leaves empty and comes back from the asteroid belt full of ore.
-The outbound rocket is clean white with a company-colour band; the returning
-one is sooty from re-entry and its pod is ore-stained. When it has landed
-the pod's side hatch opens and the ore is visible.
+The booster is reused, so it carries soot from earlier re-entries. It
+leaves with a clean white pod ('ready') and comes back with an ore-stained
+one ('back'); when it has landed the pod's side hatch opens and the ore is
+visible ('open'). 'out' is a factory-new rocket (clean booster), used in previews.
 
 All parts are modelled around (cx, cy) with z = 0 at the pad surface.
 
@@ -44,7 +45,7 @@ def _pod_paint(state):
 			return 'ore'                      # hatch open: ore visible
 		if z < 60.8 or z > 65.2:
 			return 'frame'
-		if state == 'out':
+		if state in ('out', 'ready'):
 			return 'tank_white'
 		return 'pod'
 	return paint
@@ -53,7 +54,7 @@ def _pod_paint(state):
 def model(cx, cy, state='out', legs=True, z=0.0):
 	"""The rocket standing at (cx, cy) with its engine bell at height z.
 
-	state: 'out' (clean, empty pod), 'back' (sooty, full pod), 'open' (landed, hatch open).
+	state: 'ready' (empty pod), 'back' (full pod), 'open' (landed, hatch open), 'out' (factory-new).
 	"""
 	sooty = state != 'out'
 	body = _booster_paint(sooty)

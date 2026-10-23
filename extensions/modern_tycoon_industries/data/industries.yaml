@@ -53,7 +53,7 @@ industries:
     station_name: STR_STATION_SPACEPORT
     substitute: INDUSTRYTYPE_OIL_REFINERY
     accepts: {RFUL: {AORE: 1.0}}    # every tonne of fuel brings a tonne of ore back
-    base_production: {AORE: 3}      # a few research flights fly even without deliveries
+    base_production: {}             # no fuel, no flights: ore only comes from deliveries
     map_colour: 15
     fund_cost_multiplier: 240
     prob_map_gen: 2

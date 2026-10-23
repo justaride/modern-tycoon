@@ -192,11 +192,16 @@ TILES = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1), (0, 2), (1, 2), (2, 2)]
 # Animation: one launch-and-return cycle on the pad tile, the dish on (0,1).
 # --------------------------------------------------------------------------
 
-PAD_FRAMES = 240     # at animation speed 1 (a frame every 2 ticks) one cycle is about 13 s
+PAD_FRAMES = 240     # at animation speed 1 (a frame every 2 ticks) one flight is about 13 s
 DISH_FRAMES = 16
 
-# Phases of the pad cycle (first frame of each).
-FUELLING, IGNITION, LIFTOFF, EMPTY, DESCENT, LANDED, HATCH_OPEN = 0, 36, 46, 126, 150, 200, 206
+# The pad does not loop. Frame 0 (and the identical last frame) is the idle
+# state: the rocket stands ready with the service arm attached. Each delivery
+# of rocket fuel to an idle spaceport starts one flight at frame 1; the
+# rocket launches, comes back with ore, unloads and ends idle again.
+IDLE = 0
+FUELLING, IGNITION, LIFTOFF, EMPTY, DESCENT, LANDED, HATCH_OPEN, HATCH_CLOSED = 1, 36, 46, 126, 150, 200, 206, 226
+PAD_LOGIC = {'loop': False, 'start_on_cargo': True, 'idle_frames': (IDLE, PAD_FRAMES - 1), 'start_frame': FUELLING}
 
 
 def ascent_height(t):
@@ -205,38 +210,39 @@ def ascent_height(t):
 
 def pad_state(f):
 	"""What the pad shows in frame f, as a hashable description."""
-	s = {'rocket': None, 'h': 0, 'legs': True, 'flame': None, 'cloud': 0.0, 'trail': None,
-		'vapour': None, 'arm': 'off', 'dust': 0.0}
-	if f < IGNITION:
-		s.update(rocket='out', arm='on', vapour=f % 8)
+	s = {'rocket': 'ready', 'h': 0, 'legs': True, 'flame': None, 'cloud': 0.0, 'trail': None,
+		'vapour': None, 'arm': 'on', 'dust': 0.0}
+	if f == IDLE or f >= HATCH_CLOSED:
+		pass                                          # idle: ready on the pad, waiting for fuel
+	elif f < IGNITION:
+		s.update(vapour=f % 8)                        # fuelling
 	elif f < LIFTOFF:
 		k = f - IGNITION
-		s.update(rocket='out', flame=('launch', 6 + k, f % 6), cloud=round(0.15 + 0.07 * k, 2))
+		s.update(arm='off', flame=('launch', 6 + k, f % 6), cloud=round(0.15 + 0.07 * k, 2))
 	elif f < EMPTY:
 		t = f - LIFTOFF
 		h = int(round(ascent_height(t)))
 		cloud = 0.85 if t < 12 else max(0.0, round(0.85 - (t - 12) * 0.022, 2))
-		s.update(rocket='out', h=h, legs=h < 12, flame=('launch', 18, f % 6), cloud=cloud)
+		s.update(arm='off', h=h, legs=h < 12, flame=('launch', 18, f % 6), cloud=cloud)
 		if h > 10:
 			s['trail'] = (min(h, 150), max(4, h - 80), round(min(1.0, t / 60), 2))
 	elif f < DESCENT:
 		age = (f - EMPTY) / (DESCENT - EMPTY)
 		top = int(150 - 110 * age)
+		s.update(rocket=None, arm='off')
 		if top > 20:
 			s['trail'] = (top, int(30 + 40 * age), round(1.0 + age, 2))
 	elif f < LANDED:
 		u = (f - DESCENT) / (LANDED - DESCENT)
 		h = int(round(150 * (1 - u) ** 2))
-		s.update(rocket='back', h=h, legs=h < 26, flame=('retro', 8 + int(6 * (1 - u)), f % 6))
+		s.update(rocket='back', arm='off', h=h, legs=h < 26, flame=('retro', 8 + int(6 * (1 - u)), f % 6))
 		if h < 10:
 			s['dust'] = round(1.0 - h / 10, 2)
 	else:
 		k = f - LANDED
-		s.update(rocket='back' if f < HATCH_OPEN else 'open')
+		s.update(rocket='back' if f < HATCH_OPEN else 'open', arm='off')
 		if k < 8:
 			s['dust'] = round(max(0.0, 1.0 - k / 8), 2)
-		if f >= 228:
-			s['vapour'] = f % 8
 	return tuple(sorted(s.items()))
 
 
@@ -315,7 +321,7 @@ def tile_specs(M):
 					('building', ('tower', arm), lambda: render(tower(arm), M, clip=tile_clip(1, 1), origin=_ind(t, TOWER_ORIGIN)), TOWER_ORIGIN, (4, 4, 92)),
 					('building', ('pad', state), lambda: _pad_effect(state, M, cache), ROCKET_ORIGIN, (4, 4, 80)),
 				]
-			specs.append({'pos': t, 'name': 'pad', 'anim': (PAD_FRAMES, 1), 'layers': pad_layers})
+			specs.append({'pos': t, 'name': 'pad', 'anim': (PAD_FRAMES, 1), 'logic': PAD_LOGIC, 'layers': pad_layers})
 		elif t == (0, 1):
 			def dish_layers(f, t=t, origin=origin):
 				angle = 2 * math.pi * f / DISH_FRAMES
