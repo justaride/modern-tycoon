@@ -8,8 +8,8 @@ class FjellbanenGodsInfo extends AIInfo {
 	function GetAuthor()      { return "Modern Tycoon contributors"; }
 	function GetName()        { return "Fjellbanen Gods"; }
 	function GetShortName()   { return "FJBG"; }
-	function GetDescription() { return "A Norwegian rail freight company that links busy industries with their customers, using its own pathfinder. Personality: cautious, balanced, aggressive or random."; }
-	function GetVersion()     { return 1; }
+	function GetDescription() { return "A Norwegian rail freight company: double-track lines with path signals, bridges and tunnels from its own pathfinder, raw materials to industries and goods to towns. Personality: cautious, balanced, aggressive or random."; }
+	function GetVersion()     { return 2; }
 	function MinVersionToLoad() { return 1; }
 	function GetAPIVersion()  { return "15"; }
 	function GetDate()        { return "2026-10-23"; }
@@ -39,6 +39,15 @@ class FjellbanenGodsInfo extends AIInfo {
 			min_value = 1,
 			max_value = 30,
 			default_value = 8,
+			step_size = 1,
+			flags = CONFIG_INGAME
+		});
+		AddSetting({
+			name = "start_trains",
+			description = "Trains on a new double-track line (more are added while cargo piles up)",
+			min_value = 1,
+			max_value = 6,
+			default_value = 2,
 			step_size = 1,
 			flags = CONFIG_INGAME
 		});
