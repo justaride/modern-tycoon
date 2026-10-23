@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-2.0-only
 """
 import numpy as np
 
-from raster import (GH, GW, X, Y, Layer, blur, catmull, curls, dome, ellipse, gauss, lambert, mirror, poly, rect, rng_noise, streaks, stroke)
+from raster import (CHECKER, GH, GW, X, Y, Layer, blur, catmull, curls, dome, ellipse, gauss, lambert, mirror, poly, rect, rng_noise, streaks, stroke)
 
 CX = 46.0
 EYE_Y = 47.5
@@ -455,7 +455,7 @@ HAIR_STYLES = {
 	'wild': {'vol': 3.0, 'hl': 22.0, 'recess': 4.0, 'tex': 'curly', 'curl': 1.0, 'ragged': True,
 		'extras': [('front', -24, 38, 10, 14), ('front', 24, 38, 10, 14), ('back', 0, 22, 28, 13), ('back', -27, 30, 9, 10), ('back', 27, 30, 9, 10)], 'sideburn': 52},
 	'gibson': {'vol': 2.2, 'hl': 26.0, 'top': (CX, 19, 27, 11), 'extras': [('front', 0, 9.5, 8, 5)], 'gloss': 0.15, 'tex': 'up', 'sideburn': 47},
-	'victorian': {'vol': 1.2, 'hl': 27.5, 'part': CX, 'extras': [('front', -21, 47, 4.6, 7), ('front', 21, 47, 4.6, 7)], 'gloss': 0.3, 'sideburn': 50},
+	'victorian': {'vol': 1.4, 'hl': 27.5, 'part': CX, 'extras': [('front', -21.5, 45.5, 3.6, 5.5), ('front', 21.5, 45.5, 3.6, 5.5)], 'gloss': 0.3, 'sideburn': 48},
 	'finger_waves': {'vol': 2.0, 'hl': 27.0, 'part': CX - 7, 'tex': 'wavy', 'length': 62, 'taper': 0.0, 'gloss': 0.25},
 	'ringlets': {'vol': 2.0, 'hl': 27.0, 'part': CX, 'tex': 'curly', 'curl': 1.4, 'length': 72, 'flare': 2, 'taper': 0.0},
 	'braided_crown': {'vol': 1.2, 'hl': 27.5, 'part': CX, 'braid_crown': True, 'gloss': 0.2, 'sideburn': 48},
@@ -673,10 +673,13 @@ def facial_hair(kind, seed=21):
 				tex = 'straight'
 			m |= stache
 		elif k == 'stubble':
-			region = jaw & (Y > 57) & ~ellipse(CX, MOUTH_Y + 0.4, 7.4, 2.4) & ~ellipse(CX, NOSE_Y + 0.5, 5.5, 2.5)
-			region |= jaw & (np.abs(X - CX) > 19) & (Y > 45)
-			speck = (rng_noise(seed, 0.25) > 0.62) & (rng_noise(seed + 1, 2.0) > 0.35)
-			ly.paint(region & speck, 'hair', 0.12)
+			inner = poly(head_outline('narrow'))
+			region = inner & (Y > 57) & ~ellipse(CX, MOUTH_Y + 0.4, 7.4, 2.4) & ~ellipse(CX, NOSE_Y + 0.5, 5.5, 2.5)
+			region |= inner & (np.abs(X - CX) > 17) & (Y > 45)
+			region &= Y < 83
+			fade = np.clip((Y - 56) / 9, 0, 1)
+			speck = CHECKER & (rng_noise(seed, 0.3) < 0.12 + 0.38 * fade)
+			ly.paint(region & speck, 'hair', 0.2)
 		elif k == 'goatee':
 			m |= poly([(CX - 6, 71.5), (CX + 6, 71.5), (CX + 5, 79), (CX, 83.5), (CX - 5, 79)])
 		elif k == 'soul':
@@ -889,7 +892,7 @@ def headwear(kind, mat=None):
 		crown = ellipse(CX + 3, 15, 19, 9) & (Y < 21)
 		solid(brim, m)
 		solid(crown, m)
-		plume = stroke([(CX + 12, 15), (CX + 24, 6), (CX + 34, 2), (CX + 40, 6)], [2.0, 4.0, 4.5, 2.0])
+		plume = stroke([(CX + 11, 16), (CX + 19, 12.5), (CX + 27, 11.5), (CX + 32, 14)], [2.0, 3.4, 3.4, 1.6])
 		ly.paint(plume, 'white', 0.4 + 0.5 * streaks(51, 60, 3, 0.3))
 		ly.paint(ellipse(CX + 13, 17, 3.5, 3.5), 'flower_pink', 0.5 + 0.3 * dome(CX + 13, 17, 3.5, 3.5))
 	elif kind == 'cloche':

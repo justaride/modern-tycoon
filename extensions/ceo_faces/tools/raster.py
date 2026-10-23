@@ -23,6 +23,9 @@ X = (ORIGIN[0] + ((_xs + 0.5) / SS - ORIGIN[0]) / SCALE).astype(np.float32)
 Y = (ORIGIN[1] + ((_ys + 0.5) / SS - ORIGIN[1]) / SCALE).astype(np.float32)
 del _xs, _ys
 K = SS * SCALE  # samples per design unit
+_oy, _ox = np.mgrid[0:GH, 0:GW] // SS
+CHECKER = ((_ox + _oy) % 2) == 0  # one-pixel checkerboard in face pixels
+del _ox, _oy
 
 
 def px(x, y):
