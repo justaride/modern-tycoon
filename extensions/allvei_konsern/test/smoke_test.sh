@@ -11,8 +11,9 @@
 #        KEEP_WORK=1  keep the temporary profile for inspection
 #        PERSONALITY  0 cautious, 1 balanced, 2 aggressive, 3 random (default 3)
 #        RIVALS=1     also run Nordlys Air in the same game and check both
-#        SEA=1        a map with much sea, so ship routes get built and checked
-#        SHIPS_ONLY=1 with SEA=1: switch off road, rail and air to test ships alone
+#        SEA=1        a map with much water (more coastal industries)
+#        SHIPS_ONLY=1 switch off road, rail and air; a ship route must earn money
+#                     and no ship may get lost (try SEA=1 SHIPS_ONLY=1 ... 1995 3 5)
 #
 # SPDX-License-Identifier: GPL-2.0-only
 set -euo pipefail
@@ -118,14 +119,18 @@ run_game "$WORK/run1.log" -g -G "$SEED" || fail "game exited with an error"
 check_clean "$WORK/run1.log"
 grep -q "Allvei Konsern er klar" "$WORK/run1.log" || fail "AI never started"
 ROUTES=$(grep -c "Ny rute (" "$WORK/run1.log" || true)
-[[ "$ROUTES" -ge 3 ]] || fail "fewer than 3 routes built ($ROUTES)"
+MIN_ROUTES=3
+[[ "${SHIPS_ONLY:-0}" == 1 ]] && MIN_ROUTES=1
+[[ "$ROUTES" -ge "$MIN_ROUTES" ]] || fail "fewer than $MIN_ROUTES routes built ($ROUTES)"
 MODES=$(grep -o "Ny rute ([a-z]*)" "$WORK/run1.log" | sort -u | wc -l | tr -d ' ')
 grep -E "kjøretøyoverskudd [1-9]" "$WORK/run1.log" >/dev/null || fail "the vehicles did not earn money in any year"
 if [[ "${RIVALS:-0}" == 1 ]]; then
 	grep -q "Ny rute:" "$WORK/run1.log" || fail "Nordlys Air built no route in the shared game"
 fi
-if [[ "${SEA:-0}" == 1 ]]; then
-	grep -q "Ny rute (skip)" "$WORK/run1.log" || fail "no ship route on a sea map"
+if [[ "${SHIPS_ONLY:-0}" == 1 ]]; then
+	grep -q "Ny rute (skip)" "$WORK/run1.log" || fail "no ship route built"
+	grep -E "skip: [0-9]+ ruter/[0-9]+ kjt/[1-9]" "$WORK/run1.log" >/dev/null || fail "the ships did not earn money"
+	if grep -q "finner ikke frem" "$WORK/run1.log"; then fail "a ship got lost"; fi
 fi
 SAVE="$PROFILE/save/allvei_smoke.sav"
 [[ -f "$SAVE" ]] || fail "no save game written"

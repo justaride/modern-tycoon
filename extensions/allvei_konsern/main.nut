@@ -386,7 +386,7 @@ function AllveiKonsern::ListProjects()
 					if (!this.ModeEnabled(mode) || !this.ModeDistanceOk(mode, dist)) continue;
 					if (on_water && mode != AK_MODE_WATER) continue;
 					if (AIIndustry.IsBuiltOnWater(dst) && mode != AK_MODE_WATER) continue;
-					if (mode == AK_MODE_WATER && (!this.IsCoastal(src) || !this.IsCoastal(dst))) continue;
+					if (mode == AK_MODE_WATER && (!this.IsCoastal(src, true, cargo) || !this.IsCoastal(dst, false, cargo))) continue;
 					local pair = this.PairKey(mode, src, dst, cargo);
 					if ((pair in existing) || this.IsBlocked(pair)) continue;
 					local est = this.Estimate(mode, cargo, dist, production, false);
