@@ -4,34 +4,44 @@ MT_MAX_COMPANY_FLOAT <- 80;
 MT_MAX_INDUSTRY_FLOAT <- 100;
 MT_MIN_COMPANY_LOT_PRICE <- 1000;
 MT_INDUSTRY_BASE_PRICE <- 50000;
-MT_NEWS_ARCHIVE_LIMIT <- 18;
 
 class ModernMarket {
     instruments = null;
     portfolios = null;
-    headlines = null;
+    news = null;
     last_month_key = -1;
     newspaper_page = -1;
     newspaper_body = -1;
     self_test_done = false;
     is_fresh = true;
+    settlement_faults = 0;  // Test seam: number of upcoming credits to fail on purpose. Never saved.
 
     constructor(saved_state)
     {
         this.instruments = [];
         this.portfolios = {};
-        this.headlines = [];
         this.last_month_key = -1;
         this.newspaper_page = -1;
         this.newspaper_body = -1;
         this.self_test_done = false;
         this.is_fresh = saved_state == null;
+        this.settlement_faults = 0;
 
-        if (saved_state == null) return;
+        if (saved_state == null) {
+            this.news = TransportLedger(null, null);
+            return;
+        }
         if (saved_state.rawin("instruments")) this.instruments = saved_state.instruments;
         if (saved_state.rawin("portfolios")) this.portfolios = saved_state.portfolios;
-        if (saved_state.rawin("headlines")) this.headlines = saved_state.headlines;
+        if (saved_state.rawin("news")) {
+            this.news = TransportLedger(saved_state.news, null);
+        } else {
+            /* Schema 1/2: carry the old finished headlines into the archive. */
+            this.news = TransportLedger(null, saved_state.rawin("headlines") ? saved_state.headlines : null);
+        }
         if (saved_state.rawin("last_month_key")) this.last_month_key = saved_state.last_month_key;
+        GSLog.Info("Modern Tycoon loaded " + this.instruments.len() + " saved instruments (schema " +
+            (saved_state.rawin("schema") ? saved_state.schema : 1) + ")");
         if (saved_state.rawin("newspaper_page")) this.newspaper_page = saved_state.newspaper_page;
         if (saved_state.rawin("newspaper_body")) this.newspaper_body = saved_state.newspaper_body;
         this.self_test_done = saved_state.rawin("self_test_done") ? saved_state.self_test_done : true;
@@ -44,7 +54,9 @@ class ModernMarket {
         this.RemoveInvalidInstruments();
         this.RefreshUniverse();
         this.ReconcileIssuedLots();
-        this.EnsureNewspaper();
+        this.news.EnsurePages(this.newspaper_page, this.newspaper_body);
+        this.newspaper_page = -1;
+        this.newspaper_body = -1;
         this.EnsureAllPortfolios();
         this.RefreshAllPages();
 
@@ -53,20 +65,24 @@ class ModernMarket {
             this.last_month_key = GSDate.GetYear(date) * 12 + GSDate.GetMonth(date);
         }
 
-        if (this.is_fresh) this.PublishHeadline("Modern Tycoon Exchange opens with " + this.instruments.len() + " listed securities.", false, GSCompany.COMPANY_INVALID, GSNews.NR_NONE, 0);
+        if (this.news.rivals.len() == 0) this.news.ObserveRivals(true);
+        if (this.is_fresh) {
+            this.news.Record("markets", MT_SEV_MAJOR, "exchange_open", [this.instruments.len()], GSNews.NR_NONE, 0, null, false);
+            this.news.PublishEdition(true);
+        }
+        this.news.RefreshPages();
+        this.news.LogStats("start");
         GSLog.Info("Modern Tycoon initialised with " + this.instruments.len() + " instruments");
     }
 
     function GetSaveData()
     {
         return {
-            schema = 2,
+            schema = 3,
             instruments = this.instruments,
             portfolios = this.portfolios,
-            headlines = this.headlines,
+            news = this.news.GetSaveData(),
             last_month_key = this.last_month_key,
-            newspaper_page = this.newspaper_page,
-            newspaper_body = this.newspaper_body,
             self_test_done = this.self_test_done
         };
     }
@@ -88,14 +104,32 @@ class ModernMarket {
         this.EnsureAllPortfolios();
         this.UpdatePrices();
 
-        if (((month - 1) % 3) == 0) this.PayQuarterlyDistributions();
-        this.PublishMarketClose(month);
+        if (month == 1) this.news.LogStats("year=" + (GSDate.GetYear(date) - 1));
+        local quarter_start = ((month - 1) % 3) == 0;
+        if (quarter_start) this.PayQuarterlyDistributions();
+        this.RecordMarketClose();
+        this.news.ObserveCargo();
+        this.news.ObserveRivals(false);
+        this.MaybePublishEdition(quarter_start);
         this.RefreshAllPages();
+    }
+
+    /* news_frequency: 2 = monthly editions, 1 = quarterly, 0 = only when something major happened. */
+    function MaybePublishEdition(quarter_start)
+    {
+        local frequency = GSController.GetSetting("news_frequency");
+        local major = this.news.HasUnpublishedMajor();
+        local due = major || frequency == 2 || (frequency == 1 && quarter_start);
+        if (!due) return;
+        /* Pop up at most once a quarter unless the edition leads with a major story. */
+        this.news.PublishEdition(major || quarter_start);
     }
 
     function HandleEvent(event)
     {
         local event_type = event.GetEventType();
+        /* The newspaper reads names before the market removes the company or industry. */
+        this.news.HandleEvent(event, this);
         if (event_type == GSEvent.ET_STORYPAGE_BUTTON_CLICK) {
             local click = GSEventStoryPageButtonClick.Convert(event);
             this.HandleButton(click.GetCompanyID(), click.GetElementID());
@@ -171,7 +205,7 @@ class ModernMarket {
                     issued = 0,
                     metric = 0
                 });
-                this.PublishHeadline(this.GetCompanyName(company_id) + " lists on the exchange at " + this.FormatMoney(price) + " per 1% lot.", true, GSCompany.COMPANY_INVALID, GSNews.NR_NONE, 0);
+                this.news.Record("markets", MT_SEV_NORMAL, "company_listed", [this.GetCompanyName(company_id), price], GSNews.NR_NONE, 0, null, false);
             }
         }
 
@@ -201,7 +235,7 @@ class ModernMarket {
                     quarter_metric = 0
                 });
                 listed_industries++;
-                this.PublishHeadline(this.GetIndustryName(industry_id) + " receives an exchange listing tied to transported production.", true, GSCompany.COMPANY_INVALID, GSNews.NR_INDUSTRY, industry_id);
+                this.news.Record("markets", MT_SEV_MINOR, "industry_listed", [this.GetIndustryName(industry_id)], GSNews.NR_INDUSTRY, industry_id, null, false);
             }
         }
 
@@ -221,7 +255,8 @@ class ModernMarket {
             if (valid) continue;
 
             this.LiquidateInstrument(instrument);
-            this.PublishHeadline(instrument.name + " is delisted; remaining player holdings settle at the final quoted price.", true, GSCompany.COMPANY_INVALID, GSNews.NR_NONE, 0);
+            this.news.Record("markets", instrument.kind == MT_KIND_COMPANY ? MT_SEV_MAJOR : MT_SEV_NORMAL, "delisted",
+                [instrument.name, instrument.price], GSNews.NR_NONE, 0, null, false);
             this.instruments.remove(index);
         }
     }
@@ -352,7 +387,7 @@ class ModernMarket {
         if (!GSCompany.ChangeBankBalance(company_id, -total, GSCompany.EXPENSES_OTHER, GSMap.TILE_INVALID)) return;
 
         this.CreditHolders(instrument, per_lot);
-        this.PublishHeadline(instrument.name + " declares a quarterly dividend of " + this.FormatMoney(per_lot) + " per 1% lot.", true, GSCompany.COMPANY_INVALID, GSNews.NR_NONE, 0);
+        this.news.Record("markets", MT_SEV_MINOR, "dividend", [instrument.name, per_lot], GSNews.NR_NONE, 0, null, false);
     }
 
     function PayIndustryDistribution(instrument)
@@ -362,7 +397,7 @@ class ModernMarket {
         local per_lot = (quarter_metric * GSController.GetSetting("industry_yield_per_unit")) / 100;
         if (per_lot <= 0) return;
         this.CreditHolders(instrument, per_lot);
-        this.PublishHeadline(instrument.name + " distributes " + this.FormatMoney(per_lot) + " per lot after transporting " + quarter_metric + " cargo units this quarter.", true, GSCompany.COMPANY_INVALID, GSNews.NR_INDUSTRY, instrument.object_id);
+        this.news.Record("markets", MT_SEV_MINOR, "distribution", [instrument.name, per_lot, quarter_metric], GSNews.NR_INDUSTRY, instrument.object_id, null, false);
     }
 
     function CreditHolders(instrument, per_lot)
@@ -551,7 +586,6 @@ class ModernMarket {
             local company_id = company_key.tointeger();
             if (this.IsValidCompany(company_id)) this.RefreshPortfolioPage(company_id);
         }
-        this.RefreshNewspaper();
     }
 
     function RefreshPortfolioPage(company_id)
@@ -600,52 +634,35 @@ class ModernMarket {
         GSStoryPage.UpdateElement(portfolio.detail, 0, detail);
     }
 
-    function EnsureNewspaper()
+    /* The exchange close: the biggest riser and faller this month, in basis points. Only the latest close is printed. */
+    function RecordMarketClose()
     {
-        if (GSStoryPage.IsValidStoryPage(this.newspaper_page)) return;
-        this.newspaper_page = GSStoryPage.New(GSCompany.COMPANY_INVALID, "The Transport Ledger");
-        this.newspaper_body = GSStoryPage.NewElement(this.newspaper_page, GSStoryPage.SPET_TEXT, 0, "Market desk initialising...");
-    }
-
-    function RefreshNewspaper()
-    {
-        this.EnsureNewspaper();
-        local body = "THE TRANSPORT LEDGER\nMarkets, companies and industrial production\n";
-        if (this.headlines.len() == 0) body += "\nNo editions published yet.";
-        for (local index = this.headlines.len() - 1; index >= 0; index--) {
-            body += "\n\n" + this.headlines[index];
-        }
-        GSStoryPage.UpdateElement(this.newspaper_body, 0, body);
-        if (this.UsesCalendarTimekeeping()) GSStoryPage.SetDate(this.newspaper_page, GSDate.GetCurrentDate());
-    }
-
-    function PublishMarketClose(month)
-    {
-        local frequency = GSController.GetSetting("news_frequency");
-        if (frequency == 0) return;
-        if (frequency == 1 && ((month - 1) % 3) != 0) return;
         if (this.instruments.len() == 0) return;
 
-        local leader = this.instruments[0];
-        local leader_change = -1000000;
+        local leader = this.instruments[0], laggard = this.instruments[0];
+        local leader_bp = -1000000000, laggard_bp = 1000000000;
         foreach (instrument in this.instruments) {
-            local change = instrument.previous_price > 0 ? ((instrument.price - instrument.previous_price) * 100) / instrument.previous_price : 0;
-            if (change > leader_change) {
+            local bp = instrument.previous_price > 0 ? ((instrument.price - instrument.previous_price) * 10000) / instrument.previous_price : 0;
+            if (bp > leader_bp) {
                 leader = instrument;
-                leader_change = change;
+                leader_bp = bp;
+            }
+            if (bp < laggard_bp) {
+                laggard = instrument;
+                laggard_bp = bp;
             }
         }
-        this.PublishHeadline("Exchange close: " + leader.name + " leads at " + this.FormatMoney(leader.price) + " (" + this.FormatSigned(leader_change) + "%). " + this.instruments.len() + " securities listed.", true, GSCompany.COMPANY_INVALID, GSNews.NR_NONE, 0);
+        /* A quiet session (no move of half a percent either way) is a minor report. */
+        local severity = (leader_bp >= 50 || laggard_bp <= -50) ? MT_SEV_NORMAL : MT_SEV_MINOR;
+        this.news.Record("markets", severity, "market_close",
+            [leader.name, leader.price, leader_bp, laggard.name, laggard_bp, this.instruments.len()],
+            GSNews.NR_NONE, 0, "movers", false);
     }
 
-    function PublishHeadline(text, create_news, company_id, reference_type, reference)
+    function ListedIndustryName(industry_id)
     {
-        local date = GSDate.GetCurrentDate();
-        local stamp = GSDate.GetYear(date) + "-" + GSDate.GetMonth(date);
-        this.headlines.append(stamp + " | " + text);
-        while (this.headlines.len() > MT_NEWS_ARCHIVE_LIMIT) this.headlines.remove(0);
-        if (create_news) GSNews.Create(GSNews.NT_ECONOMY, text, company_id, reference_type, reference);
-        this.RefreshNewspaper();
+        local index = this.FindInstrumentIndex("I:" + industry_id);
+        return index < 0 ? null : this.instruments[index].name;
     }
 
     function PublishPrivate(company_id, text)
@@ -694,7 +711,7 @@ class ModernMarket {
             return true;
         }
 
-        if (GSCompany.ChangeBankBalance(company_id, amount, GSCompany.EXPENSES_OTHER, GSMap.TILE_INVALID)) {
+        if (this.TryCredit(company_id, amount)) {
             portfolio.dividends += dividend_amount;
             portfolio.realised += realised_amount;
             return true;
@@ -707,12 +724,22 @@ class ModernMarket {
         return false;
     }
 
+    /* Pay money to a company. The fixture can make the next few payments fail to exercise the pending queue. */
+    function TryCredit(company_id, amount)
+    {
+        if (this.settlement_faults > 0) {
+            this.settlement_faults--;
+            return false;
+        }
+        return GSCompany.ChangeBankBalance(company_id, amount, GSCompany.EXPENSES_OTHER, GSMap.TILE_INVALID);
+    }
+
     function RetryPendingCredits()
     {
         foreach (company_key, portfolio in this.portfolios) {
             local company_id = company_key.tointeger();
             if (!this.IsValidCompany(company_id) || portfolio.pending_cash <= 0) continue;
-            if (!GSCompany.ChangeBankBalance(company_id, portfolio.pending_cash, GSCompany.EXPENSES_OTHER, GSMap.TILE_INVALID)) continue;
+            if (!this.TryCredit(company_id, portfolio.pending_cash)) continue;
 
             portfolio.dividends += portfolio.pending_dividends;
             portfolio.realised += portfolio.pending_realised;
@@ -745,7 +772,6 @@ class ModernMarket {
 
         this.SettleMergedSelfHolding(new_company_id, target);
         this.ReconcileIssuedLots();
-        this.PublishHeadline("A company merger transfers the acquired investment portfolio to " + this.GetCompanyName(new_company_id) + ".", true, GSCompany.COMPANY_INVALID, GSNews.NR_NONE, 0);
     }
 
     function SettleMergedSelfHolding(company_id, portfolio)
