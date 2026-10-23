@@ -23,6 +23,7 @@ enum class FaceVarType : uint8_t {
 	Sprite, ///< FaceVar describes an offset to the given SpriteID.
 	Palette, ///< FaceVar describes a palette to apply to the given parts bitmask.
 	Toggle, ///< FaceVar describes which other FaceVars should be turned off.
+	Recolour, ///< FaceVar picks a recolour sprite (first + value) for the given parts bitmask.
 };
 
 /** Information about the valid values of CompanyManagerFace bitgroups as well as the sprites to draw */
@@ -34,6 +35,7 @@ struct FaceVar {
 	uint8_t valid_values; ///< The number of valid values
 	std::variant<SpriteID, uint64_t, std::pair<uint64_t, uint64_t>> data; ///< The first sprite
 	StringID name = STR_NULL; ///< Name of the configurable component of the face.
+	uint8_t rarity = 0; ///< Chance in eighths that a random face gets value 0 (e.g. "no hat") for this part.
 
 	/**
 	 * Gets the company manager's face bits.
@@ -174,6 +176,12 @@ inline void RandomiseCompanyManagerFaceBits(CompanyManagerFace &cmf, FaceVars va
 {
 	cmf.bits = randomizer.Next();
 	ScaleAllCompanyManagerFaceBits(cmf, vars);
+
+	/* Make optional extras such as hats less common. Only styles that ask for it draw extra random numbers. */
+	for (const auto &var : vars) {
+		if (var.rarity == 0) continue;
+		if (randomizer.Next(8) < var.rarity) var.SetBits(cmf, 0);
+	}
 }
 
 void SetCompanyManagerFaceStyle(CompanyManagerFace &cmf, uint style);

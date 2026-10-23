@@ -376,8 +376,12 @@ static const SpriteID SPR_BRIDGE_DECKS_MGLV = SPR_BRIDGE_DECKS_BASE + 12;
 static const SpriteID SPR_BRIDGE_DECKS_ROAD = SPR_BRIDGE_DECKS_BASE + 18;
 /** @} */
 
+/** Modern Tycoon company manager faces and their recolour palettes, loaded from mt_faces.grf. */
+static constexpr SpriteID SPR_MT_FACES_BASE = SPR_BRIDGE_DECKS_BASE + BRIDGE_DECKS_SPRITE_COUNT;
+static constexpr uint16_t MT_FACES_SPRITE_COUNT = 457; ///< Must match extensions/ceo_faces/tools/build_faces.py output.
+
 /** From where can we start putting NewGRFs. */
-static const SpriteID SPR_NEWGRFS_BASE = SPR_BRIDGE_DECKS_BASE + BRIDGE_DECKS_SPRITE_COUNT;
+static const SpriteID SPR_NEWGRFS_BASE = SPR_MT_FACES_BASE + MT_FACES_SPRITE_COUNT;
 
 /** Manager face sprites.
  * @{ */

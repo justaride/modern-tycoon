@@ -2415,6 +2415,17 @@ STR_FACE_JACKET                                                 :Jacket:
 STR_FACE_COLLAR                                                 :Collar:
 STR_FACE_TIE                                                    :Tie:
 STR_FACE_EARRING                                                :Earring:
+STR_FACE_SKIN                                                   :Skin tone:
+STR_FACE_HAIR_COLOUR                                            :Hair colour:
+STR_FACE_HEAD                                                   :Face shape:
+STR_FACE_EYES                                                   :Eyes:
+STR_FACE_MOUTH                                                  :Mouth:
+STR_FACE_FACIAL_HAIR                                            :Facial hair:
+STR_FACE_OUTFIT                                                 :Outfit:
+STR_FACE_OUTFIT_COLOUR                                          :Outfit colour:
+STR_FACE_HEADWEAR                                               :Headwear:
+STR_FACE_JEWELLERY                                              :Jewellery:
+STR_FACE_FIGURE                                                 :Historic figure:
 
 # Matches ServerGameType
 ###length 3

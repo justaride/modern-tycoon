@@ -19,6 +19,7 @@ add_files(
     heightmap_colours.h
     industry_land.h
     landscape_sprite.h
+    mt_company_face.h
     newgrf_debug_data.h
     object_land.h
     palette_convert.h

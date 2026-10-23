@@ -182,6 +182,10 @@ static void LoadSpriteTables()
 	 */
 	LoadGrfFile(used_set->files[to_underlying(GraphicsFileType::Logos)].filename, 4793, PaletteType::DOS != used_set->palette);
 
+	/* Modern Tycoon company manager faces; drawn in the DOS palette. */
+	uint mt_faces = LoadGrfFile("mt_faces.grf", SPR_MT_FACES_BASE, false);
+	if (mt_faces != MT_FACES_SPRITE_COUNT) UserError("mt_faces.grf has {} sprites, expected {}", mt_faces, MT_FACES_SPRITE_COUNT);
+
 	/*
 	 * Load additional sprites for climates other than temperate.
 	 * This overwrites some of the temperate sprites, such as foundations
