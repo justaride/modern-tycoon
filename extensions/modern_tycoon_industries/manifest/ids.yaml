@@ -1,0 +1,14 @@
+# Stable identifiers. Never reuse an ID for a different object once a public
+# save can contain it. The GRF ID and cargo labels must be checked against the
+# live NewGRF registry and the cargo label list before the first public release.
+# SPDX-License-Identifier: GPL-2.0-only
+grfid: MTSI
+cargos:
+  40: RFUL   # rocket fuel
+  41: AORE   # asteroid ore
+industries:
+  0: mtsi_fuel_plant
+  1: mtsi_spaceport
+  2: mtsi_refinery
+# Industry tile IDs are assigned in build order (fuel plant 0-5, spaceport 6-14,
+# refinery 15-20). Reordering tiles in art/source changes them: bump the GRF version.

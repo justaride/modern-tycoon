@@ -1,0 +1,72 @@
+# Modern Tycoon Space Industry: cargo and industry records.
+# The NML is generated from this file and the models in art/source/ by tools/build_pack.py.
+# SPDX-License-Identifier: GPL-2.0-only
+schema: 0
+grf:
+  grfid: MTSI
+  version: 1
+  min_compatible_version: 1
+
+# New cargos. Existing vehicles carry them through cargo classes: oil tankers
+# take rocket fuel (liquid), coal/ore wagons and trucks take asteroid ore (bulk).
+cargos:
+  - label: RFUL
+    slot: 40
+    strings: {name: STR_CARGO_RFUL, unit: STR_CARGO_RFUL_UNIT, quantity: STR_CARGO_RFUL_QTY, abbrev: STR_CARGO_RFUL_ABBREV}
+    units: TTD_STR_LITERS
+    classes: [CC_LIQUID, CC_HAZARDOUS]
+    weight_t: 0.9           # per 1000 litres
+    price_factor: 150       # pays a bit better than oil
+    penalty_lowerbound: 12
+    single_penalty_length: 40
+    list_colour: 152
+    icon: fuel
+  - label: AORE
+    slot: 41
+    strings: {name: STR_CARGO_AORE, unit: STR_CARGO_AORE_UNIT, quantity: STR_CARGO_AORE_QTY, abbrev: STR_CARGO_AORE_ABBREV}
+    units: TTD_STR_TONS
+    classes: [CC_BULK]
+    weight_t: 1.0
+    price_factor: 190       # rare metals in the ore: worth more than iron ore
+    penalty_lowerbound: 20
+    single_penalty_length: 80
+    list_colour: 60
+    icon: ore
+
+industries:
+  - id: mtsi_fuel_plant
+    numeric_id: 0
+    art: fuel_plant
+    name: STR_IND_FUEL_PLANT
+    station_name: STR_STATION_FUEL_PLANT
+    substitute: INDUSTRYTYPE_TEMPERATE_FACTORY   # no placement rule (the oil refinery one keeps it near map edges)
+    accepts: {OIL_: {RFUL: 1.0}}    # one unit of oil makes one unit of rocket fuel
+    base_production: {}
+    map_colour: 152
+    fund_cost_multiplier: 160
+    prob_map_gen: 4
+    prob_in_game: 3
+  - id: mtsi_spaceport
+    numeric_id: 1
+    art: spaceport
+    name: STR_IND_SPACEPORT
+    station_name: STR_STATION_SPACEPORT
+    substitute: INDUSTRYTYPE_TEMPERATE_FACTORY   # no placement rule (the oil refinery one keeps it near map edges)
+    accepts: {RFUL: {AORE: 1.0}}    # every tonne of fuel brings a tonne of ore back
+    base_production: {}             # no fuel, no flights: ore only comes from deliveries
+    map_colour: 15
+    fund_cost_multiplier: 240
+    prob_map_gen: 2
+    prob_in_game: 2
+  - id: mtsi_refinery
+    numeric_id: 2
+    art: refinery
+    name: STR_IND_REFINERY
+    station_name: STR_STATION_REFINERY
+    substitute: INDUSTRYTYPE_STEEL_MILL
+    accepts: {AORE: {GOOD: 1.0}}
+    base_production: {}
+    map_colour: 60
+    fund_cost_multiplier: 180
+    prob_map_gen: 3
+    prob_in_game: 3
