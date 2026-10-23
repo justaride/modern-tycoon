@@ -60,6 +60,8 @@ For `extensions/modern_tycoon_gs`:
 - Save/load preserves listings, holdings, cost basis, prices, pages, archive, and last processed month without paying a period twice.
 - A five-year null-driver run completes without script errors or opcode starvation.
 
+Automated today by [`extensions/modern_tycoon_gs/test/market_test.sh`](../../extensions/modern_tycoon_gs/test/README.md): the funds rules, lifecycle settlement (merger and bankruptcy closure), pending settlement, save/load in the middle of a lifecycle, schema 2 migration, the newspaper decade, and the long soak. Still manual: Story Book page and button behaviour in the GUI.
+
 `extensions/modern_tycoon_test_ai` supplies idle, non-random test companies for this contract. Copy or link both extension directories into the executable's `game` and `ai` search paths, then use [`soak-test.example.cfg`](soak-test.example.cfg) with a clean profile. This fixture isolates market behavior from route-building AI behavior.
 
 ## Content compatibility matrix
