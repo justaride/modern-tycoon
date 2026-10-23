@@ -2,10 +2,12 @@
 # Headless in-game test for Modern Tycoon Space Industry.
 #
 # Builds the NewGRF, then in a throw-away profile (never the player profile):
-#   1. starts a 1990 temperate game with the GRF and the test GameScript
-#      (test/gs), which checks the new cargos, builds all three industries,
-#      checks their acceptance, finds vehicles that refit to the new cargos and
-#      waits for the spaceport to produce asteroid ore;
+#   1. starts a 1990 arctic game (oil wells can be funded after 1950 there)
+#      with the GRF, the test AI (test/ai) and the test GameScript (test/gs).
+#      The AI funds oil wells, a fuel plant and a spaceport along one road and
+#      trucks oil and rocket fuel. The GameScript checks the cargos and refits,
+#      builds a refinery and a spaceport that never gets fuel, and passes when
+#      the fuelled spaceport makes ore while the unfuelled one makes none;
 #   2. reloads the saved game and checks the industries survived.
 #
 # Env: OPENTTD_BIN (default ../../build/openttd), KEEP_WORK=1 to keep the profile,
@@ -25,9 +27,10 @@ cleanup() { [[ "${KEEP_WORK:-0}" == 1 ]] && echo "Kept work dir: $WORK" || rm -r
 trap cleanup EXIT
 
 PROFILE="$WORK/profile"
-mkdir -p "$PROFILE/game" "$PROFILE/newgrf" "$PROFILE/scripts" "$PROFILE/save" "$WORK/home" "$WORK/xdg"
+mkdir -p "$PROFILE/ai" "$PROFILE/game" "$PROFILE/newgrf" "$PROFILE/scripts" "$PROFILE/save" "$WORK/home" "$WORK/xdg"
 cp "$PACK/generated/modern_tycoon_space.grf" "$PROFILE/newgrf/"
 ln -s "$PACK/test/gs" "$PROFILE/game/mt_space_test"
+ln -s "$PACK/test/ai" "$PROFILE/ai/mt_space_hauler"
 
 cat > "$PROFILE/space.cfg" <<CFG
 [misc]
@@ -41,16 +44,26 @@ map_x = 7
 map_y = 7
 starting_year = 1990
 generation_seed = 20261023
-landscape = temperate
+landscape = arctic
+snow_line_height = 15
 terrain_type = 0
 town_name = english
 
+[construction]
+raw_industry_construction = 1
+
 [difficulty]
-max_no_competitors = 0
+max_no_competitors = 1
+competitors_interval = 0
+competitor_speed = 4
 terrain_type = 0
+number_towns = 0
 
 [newgrf]
 modern_tycoon_space.grf =
+
+[ai_players]
+"MT Space Hauler" =
 
 [game_scripts]
 "MT Space Test" =
@@ -75,9 +88,9 @@ printf 'schedule on-next-calendar-month monthly.scr\n' > "$PROFILE/scripts/game_
 printf 'save mt_space\nschedule on-next-calendar-month monthly.scr\n' > "$PROFILE/monthly.scr"
 
 echo "== Run 1: 1990 game with the GRF and the test GameScript"
-run_game "$WORK/run1.log" 9000 -g || { echo "FAIL: game exited with an error" >&2; tail -20 "$WORK/run1.log" >&2; exit 1; }
+run_game "$WORK/run1.log" 25000 -g || { echo "FAIL: game exited with an error" >&2; tail -20 "$WORK/run1.log" >&2; exit 1; }
 check_clean "$WORK/run1.log"
-grep -q "MTS-TEST RUN PASS" "$WORK/run1.log" || { echo "FAIL: test did not pass" >&2; grep -E "MTS-TEST|grf|script" "$WORK/run1.log" | tail -20 >&2; exit 1; }
+grep -q "MTS-TEST RUN PASS" "$WORK/run1.log" || { echo "FAIL: test did not pass" >&2; grep -E "MTS-|grf|script" "$WORK/run1.log" | tail -25 >&2; exit 1; }
 [[ -f "$PROFILE/save/mt_space.sav" ]] || { echo "FAIL: no save written" >&2; exit 1; }
 
 echo "== Run 2: reload the save"
@@ -85,5 +98,5 @@ run_game "$WORK/run2.log" 3000 -g "$PROFILE/save/mt_space.sav" || { echo "FAIL: 
 check_clean "$WORK/run2.log"
 grep -q "MTS-TEST RELOAD ok" "$WORK/run2.log" || { echo "FAIL: industries lost after reload" >&2; grep "MTS-TEST" "$WORK/run2.log" >&2; exit 1; }
 
-grep -h "MTS-TEST" "$WORK/run1.log" "$WORK/run2.log" | sed -E 's/^.*\] MTS-TEST/MTS-TEST/'
-echo "PASS: Modern Tycoon Space Industry loads, builds, produces and survives save/reload"
+grep -h -E "MTS-(TEST|AI)" "$WORK/run1.log" "$WORK/run2.log" | grep -v -E "row at|status" | sed -E 's/^.*\] (MTS-)/\1/'
+echo "PASS: Modern Tycoon Space Industry: fuel arrives, the spaceport flies, the save reloads"

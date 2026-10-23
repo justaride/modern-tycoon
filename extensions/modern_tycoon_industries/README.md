@@ -16,7 +16,7 @@ Oil wells --oil--> Rocket Fuel Plant --rocket fuel--> Spaceport --asteroid ore--
 | Industry (English / Norwegian) | Size | Accepts | Produces |
 | --- | --- | --- | --- |
 | Rocket Fuel Plant / Rakettdrivstoffverk | 2 x 3 | Oil | Rocket Fuel, 1 per unit of oil |
-| Spaceport / Romhavn | 3 x 3 | Rocket Fuel | Asteroid Ore, 1 t per unit of fuel, plus a small output of its own (about 35 t a month) so a new spaceport is never idle |
+| Spaceport / Romhavn | 3 x 3 | Rocket Fuel | Asteroid Ore, 1 t per unit of fuel. No fuel, no flights, no ore. |
 | Asteroid Refinery / Asteroideraffineri | 2 x 3 | Asteroid Ore | Goods, 1 per tonne of ore |
 
 New cargos: **Rocket Fuel** (`RFUL`, liquid) and **Asteroid Ore** (`AORE`, bulk,
@@ -27,11 +27,17 @@ Modern Tycoon Trains also carry asteroid ore. Not available in toyland.
 
 ## Animation
 
-- **Spaceport pad** (240 frames, about 13 s): fuelling with venting vapour and the
-  service arm attached, ignition with a growing exhaust cloud, lift-off with the
-  legs folding and a smoke trail, an empty pad while the trail drifts away, then
-  the returning rocket (sooty, with its pod full of ore) comes down on a blue
-  retro burn, deploys its legs, kicks up dust, lands and opens the pod hatch.
+- **Spaceport pad**: the rocket waits on the pad with the service arm attached.
+  Each delivery of rocket fuel to an idle spaceport starts one flight (240 frames,
+  about 13 s): fuelling with venting vapour, ignition with a growing exhaust
+  cloud, lift-off with the legs folding and a smoke trail, an empty pad while the
+  trail drifts away, then the rocket comes back with its pod full of ore on a blue
+  retro burn, deploys its legs, kicks up dust, lands, opens the pod hatch to
+  unload and stands ready again. Fuel that arrives during a flight is still
+  turned into ore; it just does not start a second flight. The pad tile uses a
+  non-looping animation with the cargo-received trigger: `anim_control` starts
+  it at frame 1 when the tile is idle, and `anim_next_frame` stops it at frame 0,
+  so a newly built spaceport also waits. The booster is reused and carries soot.
 - **Mission control**: the tracking dish turns.
 - **Rocket Fuel Plant**: flickering flare on the stack, cold vapour from the tank vents.
 - **Asteroid Refinery**: smoke from both chimneys, pulsing arc-furnace glow with sparks.
@@ -73,11 +79,14 @@ extensions/modern_tycoon_industries/build.sh --update-docs # also refreshes the 
 OPENTTD_BIN=build/openttd extensions/modern_tycoon_industries/test/ingame_test.sh
 ```
 
-Runs a headless 1990 temperate game in a throw-away profile. The test
-GameScript (`test/gs`) checks both cargos exist, builds all three industries,
-checks each accepts its input, lists vehicles that refit to the new cargos and
-waits for the spaceport to produce ore. The game is saved and reloaded and the
-industries must still be there.
+Runs a headless 1990 arctic game in a throw-away profile (arctic, because
+temperate oil wells can only be funded before 1950). The test AI (`test/ai`)
+funds oil wells, a Rocket Fuel Plant and a Spaceport in a row along one road
+and runs oil trucks and oil trucks refitted to rocket fuel. The test GameScript
+(`test/gs`) checks both cargos, lists vehicles that refit to them, builds a
+refinery and a second spaceport that never gets fuel, and passes when the
+fuel plant made fuel and the fuelled spaceport made ore while the unfuelled one
+made none. The game is saved and reloaded and the industries must still be there.
 
 To play: copy `generated/modern_tycoon_space.grf` into the `newgrf` folder of
 your profile, enable it in the NewGRF settings of a new game, and fund a
@@ -88,9 +97,11 @@ also appear on new maps).
 
 - Visual check inside the game window: the headless driver cannot take
   screenshots, so placement is checked with the preview images, which put the
-  sprites together with the game's offsets and draw order.
-- The launch cycle loops on its own; it is not tied to actual fuel deliveries yet
-  (a production callback could launch only when fuel is stocked).
+  sprites together with the game's offsets and draw order. The test proves fuel
+  is delivered and turned into ore, but cannot see animation frames, so the
+  idle/start behaviour of the pad is not observed in game yet.
+- The asteroid refinery is built and checked for acceptance, but ore is not yet
+  trucked to it in the test.
 - Snow and desert variants, construction stages, sounds, 32bpp and 2x/4x zoom.
 - Human provenance review of procedurally drawn art (see VISUAL_DIRECTION.md).
 - GRF ID and cargo labels not yet checked against the public registries.

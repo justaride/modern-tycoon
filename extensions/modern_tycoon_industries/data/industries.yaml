@@ -39,7 +39,7 @@ industries:
     art: fuel_plant
     name: STR_IND_FUEL_PLANT
     station_name: STR_STATION_FUEL_PLANT
-    substitute: INDUSTRYTYPE_OIL_REFINERY
+    substitute: INDUSTRYTYPE_TEMPERATE_FACTORY   # no placement rule (the oil refinery one keeps it near map edges)
     accepts: {OIL_: {RFUL: 1.0}}    # one unit of oil makes one unit of rocket fuel
     base_production: {}
     map_colour: 152
@@ -51,7 +51,7 @@ industries:
     art: spaceport
     name: STR_IND_SPACEPORT
     station_name: STR_STATION_SPACEPORT
-    substitute: INDUSTRYTYPE_OIL_REFINERY
+    substitute: INDUSTRYTYPE_TEMPERATE_FACTORY   # no placement rule (the oil refinery one keeps it near map edges)
     accepts: {RFUL: {AORE: 1.0}}    # every tonne of fuel brings a tonne of ore back
     base_production: {}             # no fuel, no flights: ore only comes from deliveries
     map_colour: 15
