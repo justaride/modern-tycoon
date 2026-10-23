@@ -9,12 +9,18 @@
 #   delist   Gate 1: a bankrupt company closes; delisting payouts and released lots.
 #   news     A ten-year game with a route-building AI; checks the newspaper is
 #            useful and not spammy, then reloads the save.
-#   migrate  A schema 2 save from origin/main loads into the current script.
+#   migrate  Saves from the schema 2 lab (pinned commit) and the schema 3 Ledger
+#            (pinned commit) load into the current script.
+#   pricing  Ten years with Nordlys Air and Fjellbanen Gods: quotes track
+#            fundamentals, rise and fall, stay bounded, and buy-and-hold can lose.
+#   replay   The same game run twice gives identical quotes (determinism).
+#   ipo      New companies are quoted at once but open for trading only after a listing period.
 #   soak     The original 150,000-tick soak with the built-in buy/distribution/sell self-test.
 #   all      Everything above.
 #
 # Usage: extensions/modern_tycoon_gs/test/market_test.sh [scenario]
 # Env:   OPENTTD_BIN  openttd binary (default: build/openttd of this checkout)
+#        PRICING_SEED map seed for the pricing scenario (default 20261023)
 #        KEEP_WORK=1  keep the temporary profiles
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -23,6 +29,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 GS_DIR="$ROOT/extensions/modern_tycoon_gs"
 TEST_AI_DIR="$ROOT/extensions/modern_tycoon_test_ai"
+NORDLYS_DIR="$ROOT/extensions/nordlys_air"
+FJELLBANEN_DIR="$ROOT/extensions/fjellbanen_gods"
+SCHEMA2_REF=926376b84  # Last commit with the schema 2 market lab (before The Transport Ledger).
+SCHEMA3_REF=7cf977433  # Schema 3: The Transport Ledger, before deterministic pricing.
+SCHEMA4_REF=6c3740cf4  # Schema 4: deterministic pricing, before listing periods and the market board.
 BIN="${OPENTTD_BIN:-$ROOT/build/openttd}"
 TICKS_PER_MONTH=2250
 SCENARIO="${1:-all}"
@@ -93,7 +104,7 @@ check_clean() {
 
 strip_log() { sed -E 's/^.*\[script:[0-9]+\] *(\[[0-9]+\] \[.\] )?//'; }
 
-GS_DEFAULTS="company_dividend_percent=25,company_market=1,industry_market=1,industry_yield_per_unit=10,max_industries=12,transaction_fee_bp=100"
+GS_DEFAULTS="company_dividend_percent=25,ipo_months=0,company_market=1,industry_market=1,industry_yield_per_unit=10,max_industries=12,transaction_fee_bp=100"
 
 # fixture <merger|delist>
 fixture() {
@@ -128,16 +139,10 @@ news() {
 	local base; base="$(new_profile news)"
 	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
 	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
-	local ai_lines="\"Modern Tycoon Test Company\" ="
-	# A route-building rival gives Rival Watch something to report. Nordlys Air lives on another branch.
-	if git -C "$ROOT" cat-file -e origin/claude/first-ai-player:extensions/nordlys_air/main.nut 2>/dev/null; then
-		mkdir -p "$base/profile/ai/nordlys_air"
-		for f in info.nut main.nut; do git -C "$ROOT" show "origin/claude/first-ai-player:extensions/nordlys_air/$f" > "$base/profile/ai/nordlys_air/$f"; done
-		ai_lines="\"Nordlys Air\" =
-$ai_lines"
-	else
-		echo "note: Nordlys Air not available; Rival Watch will only see idle companies"
-	fi
+	ln -s "$NORDLYS_DIR" "$base/profile/ai/nordlys_air"
+	# A route-building rival gives Rival Watch something to report.
+	local ai_lines="\"Nordlys Air\" =
+\"Modern Tycoon Test Company\" ="
 	write_cfg "$base" 1995 "$ai_lines" "$GS_DEFAULTS,news_frequency=1,developer_fixture=0,developer_self_test=0"
 
 	echo "== news: ten years"
@@ -166,33 +171,129 @@ $ai_lines"
 	echo "PASS: news: $editions editions, $popups pop-ups in ten years; archive of $archived editions survived reload"
 }
 
+# migrate <git ref> <script version> <schema>: a save made by an older script loads into this one.
 migrate() {
-	local base; base="$(new_profile migrate)"
+	local ref="$1" version="$2" schema="$3"
+	local base; base="$(new_profile "migrate$schema")"
 	mkdir -p "$base/old_gs"
-	git -C "$ROOT" archive origin/main extensions/modern_tycoon_gs | tar -x -C "$base/old_gs"
-	grep -q 'GetVersion()     { return 2; }' "$base/old_gs/extensions/modern_tycoon_gs/info.nut" || { echo "FAIL: origin/main is not schema 2" >&2; exit 1; }
+	git -C "$ROOT" archive "$ref" extensions/modern_tycoon_gs | tar -x -C "$base/old_gs"
+	grep -q "GetVersion()     { return $version; }" "$base/old_gs/extensions/modern_tycoon_gs/info.nut" \
+		|| { echo "FAIL: $ref is not script version $version" >&2; exit 1; }
 	ln -s "$base/old_gs/extensions/modern_tycoon_gs" "$base/profile/game/modern_tycoon_gs"
 	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
-	write_cfg "$base" 1995 "\"Modern Tycoon Test Company\" =
-\"Modern Tycoon Test Company\" =" "$GS_DEFAULTS,news_frequency=2,developer_self_test=0"
+	local ais="\"Modern Tycoon Test Company\" =
+\"Modern Tycoon Test Company\" ="
+	write_cfg "$base" 1995 "$ais" "$GS_DEFAULTS,news_frequency=2,developer_self_test=0"
 
-	echo "== migrate: one year with the schema 2 script from origin/main"
+	echo "== migrate: one year with the schema $schema script from $ref"
 	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 12)) -g
 	check_clean "$base/run1.log"
+
 	echo "== migrate: load that save with the current script"
 	rm "$base/profile/game/modern_tycoon_gs"
 	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
 	run_game "$base" "$base/run2.log" $((TICKS_PER_MONTH * 3)) -g "$base/profile/save/mt_test.sav"
 	check_clean "$base/run2.log"
-	grep -h "Loading Modern Tycoon save data from script version 2" "$base/run2.log" >/dev/null || { echo "FAIL: save was not loaded as version 2" >&2; exit 1; }
-	# The last old exchange close says how many securities the schema 2 save holds.
-	local before after
-	before=$(grep -h "MT-LEDGER MIGRATED" "$base/run2.log" | sed -E 's/.* ([0-9]+) securities listed.*/\1/')
-	after=$(grep -h "saved instruments (schema 2)" "$base/run2.log" | sed -E 's/.*loaded ([0-9]+) saved.*/\1/')
-	[[ -n "$before" && "$before" == "$after" ]] || { echo "FAIL: schema 2 save listed '$before' securities, loaded '$after'" >&2; exit 1; }
-	grep -E "MT-LEDGER STATS start .*archived=1 " "$base/run2.log" >/dev/null || { echo "FAIL: old headlines were not archived" >&2; grep "MT-LEDGER" "$base/run2.log" >&2; exit 1; }
+	grep -h "Loading Modern Tycoon save data from script version $version" "$base/run2.log" >/dev/null \
+		|| { echo "FAIL: save was not loaded as version $version" >&2; exit 1; }
+	local loaded; loaded=$(grep -h "saved instruments (schema $schema)" "$base/run2.log" | sed -E 's/.*loaded ([0-9]+) saved.*/\1/')
+	[[ -n "$loaded" && "$loaded" -gt 0 ]] || { echo "FAIL: no instruments loaded from the schema $schema save" >&2; exit 1; }
+	local expect_pricing="state restored for 0 securities, started from fair value for $loaded"
+	[[ "$schema" -ge 4 ]] && expect_pricing="state restored for $loaded securities, started from fair value for 0"
+	grep -E "MT-PRICING $expect_pricing" "$base/run2.log" >/dev/null \
+		|| { echo "FAIL: expected MT-PRICING $expect_pricing" >&2; grep "MT-PRICING" "$base/run2.log" >&2; exit 1; }
+	# Loaded games keep the script settings stored in the save, so the price log stays off; the exchange close shows quotes moved.
+	grep -q "Exchange close:" "$base/run2.log" || { echo "FAIL: no exchange close after migration" >&2; exit 1; }
 	grep -q "MT-LEDGER EDITION" "$base/run2.log" || { echo "FAIL: no edition after migration" >&2; exit 1; }
-	echo "PASS: migrate: schema 2 save with $before instruments loaded; old headlines archived; new editions published"
+	if [[ "$schema" == 2 ]]; then
+		local before; before=$(grep -h "MT-LEDGER MIGRATED" "$base/run2.log" | sed -E 's/.* ([0-9]+) securities listed.*/\1/')
+		[[ "$before" == "$loaded" ]] || { echo "FAIL: schema 2 save listed '$before' securities, loaded '$loaded'" >&2; exit 1; }
+		grep -E "MT-LEDGER STATS start .*archived=1 " "$base/run2.log" >/dev/null || { echo "FAIL: old headlines were not archived" >&2; exit 1; }
+	else
+		# A year of monthly editions was saved; a fresh Ledger would start with one.
+		local kept; kept=$(grep -h "MT-LEDGER STATS start" "$base/run2.log" | sed -E 's/.*editions=([0-9]+).*/\1/')
+		[[ -n "$kept" && "$kept" -ge 6 ]] || { echo "FAIL: Ledger editions not kept (start editions='$kept')" >&2; grep "MT-LEDGER STATS" "$base/run2.log" >&2; exit 1; }
+	fi
+	if [[ "$schema" -ge 4 ]]; then
+		# Listings from before schema 5 have no opening month and stay open for trading.
+		if grep -q "not open for trading yet" "$base/run2.log"; then echo "FAIL: an old listing was closed for trading" >&2; exit 1; fi
+	fi
+	echo "PASS: migrate: schema $schema save from $ref with $loaded instruments loaded; pricing state carried over; Ledger continues"
+}
+
+# rivals_profile <name>: a profile with Nordlys Air, Fjellbanen Gods and one idle test company.
+rivals_profile() {
+	local base; base="$(new_profile "$1")"
+	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
+	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
+	ln -s "$NORDLYS_DIR" "$base/profile/ai/nordlys_air"
+	ln -s "$FJELLBANEN_DIR" "$base/profile/ai/fjellbanen_gods"
+	write_cfg "$base" 1995 "\"Nordlys Air\" =
+\"Fjellbanen Gods\" =
+\"Modern Tycoon Test Company\" =" "${GS_DEFAULTS/ipo_months=0/ipo_months=12},news_frequency=1,developer_fixture=0,developer_self_test=0,developer_price_log=1"
+	echo "$base"
+}
+
+pricing() {
+	local base; base="$(rivals_profile pricing)"
+	local seed="${PRICING_SEED:-20261023}"
+	echo "== pricing: ten years with Nordlys Air, Fjellbanen Gods and an idle company (map seed $seed)"
+	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 12 * 10)) -g -G "$seed"
+	check_clean "$base/run1.log"
+	python3 -I "$GS_DIR/test/price_report.py" "$base/run1.log" > "$base/report.txt" || { cat "$base/report.txt"; exit 1; }
+	cat "$base/report.txt"
+	echo "-- market reports in the Ledger:"
+	grep -E "Quarter in review|beats expectations|misses expectations|quarterly loss|warns it will close|output (jumps|drops)" "$base/run1.log" \
+		| strip_log | sed -E 's/^MT-LEDGER +//' | sort | uniq -c | sort -rn | head -12
+	grep -q "Quarter in review" "$base/run1.log" || { echo "FAIL: the Ledger never reviewed a quarter" >&2; exit 1; }
+
+	echo "== pricing: reload and play three more months"
+	run_game "$base" "$base/run2.log" $((TICKS_PER_MONTH * 3)) -g "$base/profile/save/mt_test.sav"
+	check_clean "$base/run2.log"
+	grep -E "MT-PRICING state restored for [1-9][0-9]* securities, started from fair value for 0" "$base/run2.log" >/dev/null \
+		|| { echo "FAIL: pricing state not restored from the save" >&2; grep "MT-PRICING" "$base/run2.log" >&2; exit 1; }
+	echo "PASS: pricing: quotes track fundamentals, rise and fall, stay bounded; state survived reload"
+}
+
+replay() {
+	local a b; a="$(rivals_profile replay_a)"; b="$(rivals_profile replay_b)"
+	echo "== replay: the same two-year game twice"
+	run_game "$a" "$a/run1.log" $((TICKS_PER_MONTH * 24)) -g -G 20261023
+	run_game "$b" "$b/run1.log" $((TICKS_PER_MONTH * 24)) -g -G 20261023
+	check_clean "$a/run1.log"; check_clean "$b/run1.log"
+	grep -o "MT-PRICE .*" "$a/run1.log" > "$a/quotes.txt"
+	grep -o "MT-PRICE .*" "$b/run1.log" > "$b/quotes.txt"
+	local count; count=$(wc -l < "$a/quotes.txt" | tr -d ' ')
+	[[ "$count" -gt 100 ]] || { echo "FAIL: only $count quotes" >&2; exit 1; }
+	diff -q "$a/quotes.txt" "$b/quotes.txt" >/dev/null || { echo "FAIL: quotes differ between identical games" >&2; diff "$a/quotes.txt" "$b/quotes.txt" | head >&2; exit 1; }
+	echo "PASS: replay: $count quotes identical across two runs of the same game"
+}
+
+# A new company is quoted at once but cannot be bought before its opening month.
+ipo() {
+	local base; base="$(new_profile ipo)"
+	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
+	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
+	write_cfg "$base" 1995 "\"Modern Tycoon Test Company\" =
+\"Modern Tycoon Test Company\" =" "${GS_DEFAULTS/ipo_months=0/ipo_months=6},news_frequency=2,developer_self_test=1,developer_fixture=0,developer_price_log=1"
+	echo "== ipo: nine months with a six-month listing period"
+	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 9)) -g
+	check_clean "$base/run1.log"
+	grep -q "MT-IPO PASS" "$base/run1.log" || { echo "FAIL: no refused buy before the opening month" >&2; grep -E "self-test|MT-IPO" "$base/run1.log" >&2; exit 1; }
+	grep -q "self-test passed" "$base/run1.log" || { echo "FAIL: self-test did not pass with locked companies" >&2; exit 1; }
+	grep -q "shares open for trading in" "$base/run1.log" || { echo "FAIL: the Ledger did not report a planned listing" >&2; exit 1; }
+	grep -q "opens for trading at" "$base/run1.log" || { echo "FAIL: the Ledger did not report an opening" >&2; exit 1; }
+	# Months from the first quote until each company's first open quote.
+	local waits; waits=$(grep -o "MT-PRICE [0-9]* C:[0-9]* .*open=[01]" "$base/run1.log" | awk '
+		{ m=$2; id=$3; o=substr($NF,6); if (!(id in first)) first[id]=m; if (o==1 && !(id in opened)) opened[id]=m }
+		END { for (id in first) printf "%s=%s ", id, (id in opened) ? opened[id]-first[id]+1 : "never" }')
+	echo "-- months quoted before trading opened: $waits"
+	[[ "$waits" != *never* && "$waits" =~ =[4-7]\  ]] || { echo "FAIL: unexpected opening months: $waits" >&2; exit 1; }
+	echo "== ipo: reload and play two more months"
+	run_game "$base" "$base/run2.log" $((TICKS_PER_MONTH * 2)) -g "$base/profile/save/mt_test.sav"
+	check_clean "$base/run2.log"
+	if grep -q "opens for trading at" "$base/run2.log"; then echo "FAIL: an opening was announced twice after reload" >&2; exit 1; fi
+	echo "PASS: ipo: buys refused before the opening month, openings announced once ($waits)"
 }
 
 soak() {
@@ -211,8 +312,11 @@ soak() {
 case "$SCENARIO" in
 	merger|delist) fixture "$SCENARIO" ;;
 	news) news ;;
-	migrate) migrate ;;
+	migrate) migrate "$SCHEMA2_REF" 2 2; migrate "$SCHEMA3_REF" 3 3; migrate "$SCHEMA4_REF" 4 4 ;;
+	pricing) pricing ;;
+	replay) replay ;;
+	ipo) ipo ;;
 	soak) soak ;;
-	all) fixture merger; fixture delist; news; migrate; soak ;;
+	all) fixture merger; fixture delist; news; migrate "$SCHEMA2_REF" 2 2; migrate "$SCHEMA3_REF" 3 3; migrate "$SCHEMA4_REF" 4 4; pricing; replay; ipo; soak ;;
 	*) echo "unknown scenario: $SCENARIO" >&2; exit 2 ;;
 esac

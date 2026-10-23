@@ -14,6 +14,7 @@ class ModernMarket {
     newspaper_body = -1;
     self_test_done = false;
     is_fresh = true;
+    price_seed = 0;         // Seed for the deterministic price noise; drawn once, then saved.
     settlement_faults = 0;  // Test seam: number of upcoming credits to fail on purpose. Never saved.
 
     constructor(saved_state)
@@ -26,6 +27,8 @@ class ModernMarket {
         this.self_test_done = false;
         this.is_fresh = saved_state == null;
         this.settlement_faults = 0;
+        this.price_seed = (saved_state != null && saved_state.rawin("price_seed"))
+            ? saved_state.price_seed : GSBase.RandRange(0x7FFFFFFF);
 
         if (saved_state == null) {
             this.news = TransportLedger(null, null);
@@ -78,7 +81,8 @@ class ModernMarket {
     function GetSaveData()
     {
         return {
-            schema = 3,
+            schema = 5,
+            price_seed = this.price_seed,
             instruments = this.instruments,
             portfolios = this.portfolios,
             news = this.news.GetSaveData(),
@@ -147,6 +151,11 @@ class ModernMarket {
             return;
         }
 
+        if (event_type == GSEvent.ET_COMPANY_IN_TROUBLE) {
+            this.ReactToTrouble(GSEventCompanyInTrouble.Convert(event).GetCompanyID());
+            return;
+        }
+
         if (event_type == GSEvent.ET_COMPANY_NEW ||
                 event_type == GSEvent.ET_COMPANY_BANKRUPT ||
                 event_type == GSEvent.ET_INDUSTRY_OPEN ||
@@ -166,16 +175,16 @@ class ModernMarket {
         local portfolio = this.GetPortfolio(company_id);
         if (portfolio == null || this.instruments.len() == 0) return;
 
+        local selected = this.SelectedIndex(portfolio);
+        local count = this.instruments.len();
         if (element_id == portfolio.previous_button) {
-            portfolio.selected--;
-            if (portfolio.selected < 0) portfolio.selected = this.instruments.len() - 1;
+            this.Select(portfolio, (selected + count - 1) % count);
         } else if (element_id == portfolio.next_button) {
-            portfolio.selected++;
-            if (portfolio.selected >= this.instruments.len()) portfolio.selected = 0;
+            this.Select(portfolio, (selected + 1) % count);
         } else if (element_id == portfolio.buy_button) {
-            this.BuyOneLot(company_id, this.instruments[portfolio.selected]);
+            this.BuyOneLot(company_id, this.instruments[selected]);
         } else if (element_id == portfolio.sell_button) {
-            this.SellOneLot(company_id, this.instruments[portfolio.selected]);
+            this.SellOneLot(company_id, this.instruments[selected]);
         } else if (element_id != portfolio.refresh_button) {
             return;
         }
@@ -203,9 +212,23 @@ class ModernMarket {
                     price = price,
                     previous_price = price,
                     issued = 0,
-                    metric = 0
+                    metric = 0,
+                    fair = price,
+                    fundamental = price,
+                    sentiment = 0,
+                    shock = 0,
+                    expected = 0,
+                    has_expected = false,
+                    quarter_open = price,
+                    history = [price]
                 });
-                this.news.Record("markets", MT_SEV_NORMAL, "company_listed", [this.GetCompanyName(company_id), price], GSNews.NR_NONE, 0, null, false);
+                local listed = this.instruments.top();
+                this.ScheduleIpo(listed);
+                if (listed.ipo_announced) {
+                    this.news.Record("markets", MT_SEV_NORMAL, "company_listed", [listed.name, price], GSNews.NR_NONE, 0, null, false);
+                } else {
+                    this.news.Record("markets", MT_SEV_NORMAL, "company_ipo_planned", [listed.name, MT_MonthName(listed.opens)], GSNews.NR_NONE, 0, null, false);
+                }
             }
         }
 
@@ -232,7 +255,15 @@ class ModernMarket {
                     previous_price = price,
                     issued = 0,
                     metric = metric,
-                    quarter_metric = 0
+                    quarter_metric = 0,
+                    fair = price,
+                    fundamental = price,
+                    sentiment = 0,
+                    shock = 0,
+                    expected = 0,
+                    has_expected = false,
+                    quarter_open = price,
+                    history = [price]
                 });
                 listed_industries++;
                 this.news.Record("markets", MT_SEV_MINOR, "industry_listed", [this.GetIndustryName(industry_id)], GSNews.NR_INDUSTRY, industry_id, null, false);
@@ -275,27 +306,33 @@ class ModernMarket {
         }
     }
 
+    /* Monthly quotes; the model is described in pricing.nut. */
     function UpdatePrices()
     {
+        local date = GSDate.GetCurrentDate();
+        local month_key = GSDate.GetYear(date) * 12 + GSDate.GetMonth(date);
+        local quarter_start = ((GSDate.GetMonth(date) - 1) % 3) == 0;
         foreach (instrument in this.instruments) {
             instrument.previous_price = instrument.price;
-            local fundamental = 0;
             if (instrument.kind == MT_KIND_COMPANY) {
                 instrument.name = this.GetCompanyName(instrument.object_id);
-                fundamental = this.CompanyFundamentalPrice(instrument.object_id);
             } else {
                 instrument.name = this.GetIndustryName(instrument.object_id);
                 instrument.metric = this.GetIndustryTransportMetric(instrument.object_id);
                 instrument.quarter_metric += instrument.metric;
-                fundamental = this.IndustryFundamentalPrice(instrument.object_id);
             }
-
-            local gap = fundamental - instrument.price;
-            local movement = gap / 4;
-            local cap = this.MaxValue(1, instrument.price / 10);
-            movement = this.Clamp(movement, -cap, cap);
-            instrument.price = this.MaxValue(1, instrument.price + movement);
+            local fundamental = this.FundamentalOf(instrument);
+            this.EnsurePricingState(instrument, fundamental);
+            if (instrument.kind == MT_KIND_COMPANY) {
+                if (quarter_start) this.ReactToResults(instrument);
+            } else {
+                this.ReactToProduction(instrument);
+            }
+            this.MovePrice(instrument, fundamental, month_key);
+            this.RecordHistory(instrument);
         }
+        this.AnnounceIpos();
+        if (quarter_start) this.RecordQuarterMovers();
     }
 
     function CompanyFundamentalPrice(company_id)
@@ -311,7 +348,7 @@ class ModernMarket {
         }
 
         local profit_component = trailing_profit * 6;
-        profit_component = this.Clamp(profit_component, -(value / 2), value * 4);
+        profit_component = this.MaxValue(profit_component, -(value / 2));
         local market_cap = this.MaxValue(MT_MIN_COMPANY_LOT_PRICE * 100, value + profit_component);
         return this.MaxValue(MT_MIN_COMPANY_LOT_PRICE, market_cap / 100);
     }
@@ -419,6 +456,12 @@ class ModernMarket {
             return false;
         }
 
+        if (!this.IsOpenForTrading(instrument)) {
+            this.PublishPrivate(company_id, instrument.name + " is not open for trading yet. Its shares open in " +
+                MT_MonthName(instrument.opens) + ", once it has reported results.");
+            return false;
+        }
+
         local maximum = instrument.kind == MT_KIND_COMPANY ? MT_MAX_COMPANY_FLOAT : MT_MAX_INDUSTRY_FLOAT;
         if (instrument.issued >= maximum) {
             this.PublishPrivate(company_id, "No public lots are currently available in " + instrument.name + ".");
@@ -503,25 +546,8 @@ class ModernMarket {
         local portfolio = this.portfolios[key];
         this.EnsurePortfolioSchema(portfolio);
 
-        if (!GSStoryPage.IsValidStoryPage(portfolio.page)) this.CreatePortfolioPage(company_id, portfolio);
+        if (this.NeedsNewPage(portfolio)) this.BuildPortfolioPage(company_id, portfolio);
         return portfolio;
-    }
-
-    function CreatePortfolioPage(company_id, portfolio)
-    {
-        portfolio.page = GSStoryPage.New(company_id, "Modern Tycoon Exchange");
-        portfolio.summary = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_TEXT, 0, "Portfolio initialising...");
-        portfolio.detail = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_TEXT, 0, "No listed securities.");
-
-        local left = GSStoryPage.MakePushButtonReference(GSStoryPage.SPBC_LIGHT_BLUE, GSStoryPage.SPBF_FLOAT_LEFT);
-        local green = GSStoryPage.MakePushButtonReference(GSStoryPage.SPBC_GREEN, GSStoryPage.SPBF_FLOAT_LEFT);
-        local red = GSStoryPage.MakePushButtonReference(GSStoryPage.SPBC_RED, GSStoryPage.SPBF_FLOAT_LEFT);
-        portfolio.previous_button = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_BUTTON_PUSH, left, "Previous");
-        portfolio.next_button = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_BUTTON_PUSH, left, "Next");
-        portfolio.buy_button = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_BUTTON_PUSH, green, "Buy 1 lot");
-        portfolio.sell_button = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_BUTTON_PUSH, red, "Sell 1 lot");
-        portfolio.refresh_button = GSStoryPage.NewElement(portfolio.page, GSStoryPage.SPET_BUTTON_PUSH, left, "Refresh quote");
-        GSLog.Info("Created Modern Tycoon Exchange portfolio page for company " + company_id);
     }
 
     function MaybeRunSelfTest()
@@ -531,6 +557,10 @@ class ModernMarket {
         for (local company_id = GSCompany.COMPANY_FIRST; company_id < GSCompany.COMPANY_LAST; company_id++) {
             if (!this.IsValidCompany(company_id)) continue;
             local portfolio = this.EnsurePortfolio(company_id);
+            if (!this.SelfTestIpoRule(company_id)) {
+                this.self_test_done = true;
+                return;
+            }
 
             foreach (instrument in this.instruments) {
                 if (instrument.kind == MT_KIND_COMPANY && instrument.object_id == company_id) continue;
@@ -591,47 +621,11 @@ class ModernMarket {
     function RefreshPortfolioPage(company_id)
     {
         local portfolio = this.EnsurePortfolio(company_id);
-        if (portfolio.selected >= this.instruments.len()) portfolio.selected = 0;
-        if (portfolio.selected < 0) portfolio.selected = 0;
-
-        local market_value = 0;
-        local cost_basis = 0;
-        local lot_count = 0;
-        foreach (instrument_id, holding in portfolio.holdings) {
-            local instrument_index = this.FindInstrumentIndex(instrument_id);
-            if (instrument_index < 0) continue;
-            market_value += holding.lots * this.instruments[instrument_index].price;
-            cost_basis += holding.cost_basis;
-            lot_count += holding.lots;
-        }
-
-        local summary = "Available cash: " + this.FormatMoney(GSCompany.GetBankBalance(company_id)) +
-            "\nPortfolio: " + lot_count + " lots worth " + this.FormatMoney(market_value) +
-            "\nUnrealised result: " + this.FormatSignedMoney(market_value - cost_basis) +
-            " | Realised: " + this.FormatSignedMoney(portfolio.realised) +
-            " | Dividends: " + this.FormatMoney(portfolio.dividends) +
-            (portfolio.pending_cash > 0 ? " | Pending settlement: " + this.FormatMoney(portfolio.pending_cash) : "");
-        GSStoryPage.UpdateElement(portfolio.summary, 0, summary);
+        local selected = this.SelectedIndex(portfolio);
+        this.WriteBlock(portfolio.summary_lines, this.SummaryLines(company_id, portfolio));
+        this.WriteBlock(portfolio.detail_lines, this.DetailLines(portfolio, selected));
+        this.WriteBoard(portfolio, this.BoardLines(portfolio, selected));
         if (this.UsesCalendarTimekeeping()) GSStoryPage.SetDate(portfolio.page, GSDate.GetCurrentDate());
-
-        if (this.instruments.len() == 0) {
-            GSStoryPage.UpdateElement(portfolio.detail, 0, "No securities are listed. Enable a market in Game Script settings.");
-            return;
-        }
-
-        local instrument = this.instruments[portfolio.selected];
-        local held_lots = portfolio.holdings.rawin(instrument.id) ? portfolio.holdings[instrument.id].lots : 0;
-        local change = instrument.price - instrument.previous_price;
-        local change_percent = instrument.previous_price > 0 ? (change * 100) / instrument.previous_price : 0;
-        local kind = instrument.kind == MT_KIND_COMPANY ? "COMPANY EQUITY" : "INDUSTRY SECURITY";
-        local detail = kind + "  " + (portfolio.selected + 1) + "/" + this.instruments.len() +
-            "\n" + instrument.name +
-            "\nPrice per lot: " + this.FormatMoney(instrument.price) + " (" + this.FormatSigned(change_percent) + "%)" +
-            "\nYour holding: " + held_lots + " lots | Player-held float: " + instrument.issued +
-            "\n" + (instrument.kind == MT_KIND_COMPANY
-                ? "One lot represents 1% economic exposure; self-trading is prohibited."
-                : "Quote and distributions track this industry's transported production.");
-        GSStoryPage.UpdateElement(portfolio.detail, 0, detail);
     }
 
     /* The exchange close: the biggest riser and faller this month, in basis points. Only the latest close is printed. */
@@ -678,10 +672,15 @@ class ModernMarket {
 
     function EnsureInstrumentSchema()
     {
+        local migrated = 0;
         foreach (instrument in this.instruments) {
             if (!instrument.rawin("metric")) instrument.metric <- 0;
             if (instrument.kind == MT_KIND_INDUSTRY && !instrument.rawin("quarter_metric")) instrument.quarter_metric <- 0;
+            if (!instrument.rawin("fair")) migrated++;
+            this.EnsurePricingState(instrument, this.FundamentalOf(instrument));
         }
+        if (!this.is_fresh) GSLog.Info("MT-PRICING state restored for " + (this.instruments.len() - migrated) +
+            " securities, started from fair value for " + migrated);
     }
 
     function EnsurePortfolioSchema(portfolio)
@@ -886,12 +885,12 @@ class ModernMarket {
 
     function FormatMoney(value)
     {
-        return value < 0 ? "-" + (-value) : value.tostring();
+        return MT_Group(value);
     }
 
     function FormatSignedMoney(value)
     {
-        return value > 0 ? "+" + value : value.tostring();
+        return (value > 0 ? "+" : "") + MT_Group(value);
     }
 
     function FormatSigned(value)
