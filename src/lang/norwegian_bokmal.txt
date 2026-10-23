@@ -2410,6 +2410,17 @@ STR_FACE_JACKET                                                 :Jakke:
 STR_FACE_COLLAR                                                 :Krage:
 STR_FACE_TIE                                                    :Slips:
 STR_FACE_EARRING                                                :Ørering:
+STR_FACE_SKIN                                                   :Hudfarge:
+STR_FACE_HAIR_COLOUR                                            :Hårfarge:
+STR_FACE_HEAD                                                   :Ansiktsform:
+STR_FACE_EYES                                                   :Øyne:
+STR_FACE_MOUTH                                                  :Munn:
+STR_FACE_FACIAL_HAIR                                            :Skjegg:
+STR_FACE_OUTFIT                                                 :Antrekk:
+STR_FACE_OUTFIT_COLOUR                                          :Antrekksfarge:
+STR_FACE_HEADWEAR                                               :Hodeplagg:
+STR_FACE_JEWELLERY                                              :Smykker:
+STR_FACE_FIGURE                                                 :Historisk skikkelse:
 
 # Matches ServerGameType
 ###length 3

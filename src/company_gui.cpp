@@ -1145,6 +1145,14 @@ void DrawCompanyManagerFace(const CompanyManagerFace &cmf, Colours colour, const
 
 	/* Second, get palettes. */
 	for (auto var : SetBitIterator(active_vars)) {
+		if (vars[var].type == FaceVarType::Recolour) {
+			const auto &[affected, first] = std::get<std::pair<uint64_t, uint64_t>>(vars[var].data);
+			PaletteID pal = static_cast<PaletteID>(first + vars[var].GetBits(cmf));
+			for (uint8_t affected_var : SetBitIterator(affected)) {
+				palettes[affected_var] = pal;
+			}
+			continue;
+		}
 		if (vars[var].type != FaceVarType::Palette) continue;
 
 		PaletteID pal = PAL_NONE;

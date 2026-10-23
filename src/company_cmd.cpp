@@ -47,6 +47,7 @@
 
 #include "table/strings.h"
 #include "table/company_face.h"
+#include "table/mt_company_face.h"
 
 #include "safeguards.h"
 
@@ -1396,6 +1397,7 @@ void ResetFaces()
 {
 	_faces.clear();
 	_faces.assign(std::begin(_original_faces), std::end(_original_faces));
+	_faces.insert(std::end(_faces), std::begin(_mt_faces), std::end(_mt_faces));
 }
 
 /**
