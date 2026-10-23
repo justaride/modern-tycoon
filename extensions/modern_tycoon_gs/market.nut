@@ -78,7 +78,7 @@ class ModernMarket {
     function GetSaveData()
     {
         return {
-            schema = 3,
+            schema = 4,
             instruments = this.instruments,
             portfolios = this.portfolios,
             news = this.news.GetSaveData(),

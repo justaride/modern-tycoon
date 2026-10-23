@@ -46,7 +46,7 @@ function ModernTycoon::Start()
 
 function ModernTycoon::Save()
 {
-    if (this.market == null) return { schema = 3 };
+    if (this.market == null) return { schema = 4 };
     local data = this.market.GetSaveData();
     if (this.fixture != null) data.fixture <- this.fixture.state;
     return data;

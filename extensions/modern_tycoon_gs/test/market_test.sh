@@ -9,7 +9,7 @@
 #   delist   Gate 1: a bankrupt company closes; delisting payouts and released lots.
 #   news     A ten-year game with a route-building AI; checks the newspaper is
 #            useful and not spammy, then reloads the save.
-#   migrate  A schema 2 save from origin/main loads into the current script.
+#   migrate  Schema 2 and schema 3 saves from pinned commits load into the current script.
 #   soak     The original 150,000-tick soak with the built-in buy/distribution/sell self-test.
 #   all      Everything above.
 #
@@ -83,12 +83,22 @@ run_game() {
 		|| { echo "FAIL: openttd exited with an error ($log)" >&2; tail -30 "$log" >&2; exit 1; }
 }
 
+# Script errors, language-file problems (strgen warnings) and GSText parameter mismatches.
+CLEAN_PATTERN='\[S\]|\[E\]|script died|Your script made an error|Error compiling|No data saved|[a-z_]+:[0-9]+: (warning|error|fatal)|to be consumed|Invalid parameter|Not enough parameters'
 check_clean() {
-	if grep -E "\[S\]|\[E\]|script died|Your script made an error|Error compiling|No data saved" "$1" >/dev/null; then
+	if grep -E "$CLEAN_PATTERN" "$1" >/dev/null; then
 		echo "FAIL: script error in $1:" >&2
-		grep -E -B3 -A10 "\[S\]|\[E\]|script died|Your script made an error|Error compiling|No data saved" "$1" | head -60 >&2
+		grep -E -B3 -A10 "$CLEAN_PATTERN" "$1" | head -60 >&2
 		exit 1
 	fi
+}
+
+# check_pages <log>: every archived edition has its own Story Book page.
+check_pages() {
+	local bad
+	bad=$(grep "MT-LEDGER STATS" "$1" | sed -E 's/.*archived=([0-9]+) pages=([0-9]+).*/\1 \2/' | awk '$1 != $2' | head -1)
+	[[ -z "$bad" ]] || { echo "FAIL: archived/pages mismatch ($bad) in $1" >&2; grep "MT-LEDGER STATS" "$1" >&2; exit 1; }
+	if grep "MT-LEDGER EDITION" "$1" | grep -q "page=missing"; then echo "FAIL: an edition has no page in $1" >&2; exit 1; fi
 }
 
 strip_log() { sed -E 's/^.*\[script:[0-9]+\] *(\[[0-9]+\] \[.\] )?//'; }
@@ -143,6 +153,7 @@ $ai_lines"
 	echo "== news: ten years"
 	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 12 * 10)) -g
 	check_clean "$base/run1.log"
+	check_pages "$base/run1.log"
 	local editions popups
 	editions=$(grep -c "MT-LEDGER EDITION" "$base/run1.log" || true)
 	popups=$(grep "MT-LEDGER STATS" "$base/run1.log" | tail -1 | sed -E 's/.*popups=([0-9]+).*/\1/')
@@ -153,6 +164,7 @@ $ai_lines"
 	grep "MT-LEDGER STATS" "$base/run1.log" | strip_log
 	[[ "$editions" -ge 30 ]] || { echo "FAIL: only $editions editions in ten years" >&2; exit 1; }
 	[[ "$popups" -le 60 ]] || { echo "FAIL: $popups news pop-ups in ten years is spammy" >&2; exit 1; }
+	grep -q "\[map\]" "$base/run1.log" || { echo "FAIL: no story with a map link in ten years" >&2; exit 1; }
 	if grep -q "Nordlys Air" "$base/profile/test.cfg"; then
 		grep -q "RIVAL WATCH" "$base/run1.log" || { echo "FAIL: no Rival Watch reports with a route-building AI" >&2; exit 1; }
 	fi
@@ -161,38 +173,67 @@ $ai_lines"
 	local archived; archived=$(grep "MT-LEDGER STATS" "$base/run1.log" | tail -1 | sed -E 's/.*archived=([0-9]+).*/\1/')
 	run_game "$base" "$base/run2.log" $((TICKS_PER_MONTH * 2)) -g "$base/profile/save/mt_test.sav"
 	check_clean "$base/run2.log"
+	check_pages "$base/run2.log"
 	grep -E "MT-LEDGER STATS start .*archived=$archived" "$base/run2.log" >/dev/null \
 		|| { echo "FAIL: archive not restored (expected archived=$archived)" >&2; grep "MT-LEDGER STATS" "$base/run2.log" >&2; exit 1; }
 	echo "PASS: news: $editions editions, $popups pop-ups in ten years; archive of $archived editions survived reload"
 }
 
-migrate() {
-	local base; base="$(new_profile migrate)"
+# Pinned script versions for the migration tests.
+SCHEMA2_REF=9dee3478d   # Add Modern Tycoon market laboratory
+SCHEMA3_REF=84c1f161b   # Structured Transport Ledger
+
+# old_profile <name> <ref> <version>: a profile running the script from an older commit.
+old_profile() {
+	local base; base="$(new_profile "$1")"
 	mkdir -p "$base/old_gs"
-	git -C "$ROOT" archive origin/main extensions/modern_tycoon_gs | tar -x -C "$base/old_gs"
-	grep -q 'GetVersion()     { return 2; }' "$base/old_gs/extensions/modern_tycoon_gs/info.nut" || { echo "FAIL: origin/main is not schema 2" >&2; exit 1; }
+	git -C "$ROOT" archive "$2" extensions/modern_tycoon_gs | tar -x -C "$base/old_gs"
+	grep -q "GetVersion()     { return $3; }" "$base/old_gs/extensions/modern_tycoon_gs/info.nut" || { echo "FAIL: $2 is not script version $3" >&2; exit 1; }
 	ln -s "$base/old_gs/extensions/modern_tycoon_gs" "$base/profile/game/modern_tycoon_gs"
 	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
 	write_cfg "$base" 1995 "\"Modern Tycoon Test Company\" =
 \"Modern Tycoon Test Company\" =" "$GS_DEFAULTS,news_frequency=2,developer_self_test=0"
+	echo "$base"
+}
 
-	echo "== migrate: one year with the schema 2 script from origin/main"
+# switch_to_current <base>: load the old save with the script in this checkout.
+switch_to_current() {
+	rm "$1/profile/game/modern_tycoon_gs"
+	ln -s "$GS_DIR" "$1/profile/game/modern_tycoon_gs"
+	run_game "$1" "$1/run2.log" $((TICKS_PER_MONTH * 3)) -g "$1/profile/save/mt_test.sav"
+	check_clean "$1/run2.log"
+	check_pages "$1/run2.log"
+	grep -q "MT-LEDGER EDITION" "$1/run2.log" || { echo "FAIL: no edition after migration" >&2; exit 1; }
+}
+
+migrate() {
+	local base before after archived
+	base="$(old_profile migrate2 "$SCHEMA2_REF" 2)"
+	echo "== migrate: one year with the schema 2 script ($SCHEMA2_REF)"
 	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 12)) -g
 	check_clean "$base/run1.log"
 	echo "== migrate: load that save with the current script"
-	rm "$base/profile/game/modern_tycoon_gs"
-	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
-	run_game "$base" "$base/run2.log" $((TICKS_PER_MONTH * 3)) -g "$base/profile/save/mt_test.sav"
-	check_clean "$base/run2.log"
+	switch_to_current "$base"
 	grep -h "Loading Modern Tycoon save data from script version 2" "$base/run2.log" >/dev/null || { echo "FAIL: save was not loaded as version 2" >&2; exit 1; }
 	# The last old exchange close says how many securities the schema 2 save holds.
-	local before after
 	before=$(grep -h "MT-LEDGER MIGRATED" "$base/run2.log" | sed -E 's/.* ([0-9]+) securities listed.*/\1/')
 	after=$(grep -h "saved instruments (schema 2)" "$base/run2.log" | sed -E 's/.*loaded ([0-9]+) saved.*/\1/')
 	[[ -n "$before" && "$before" == "$after" ]] || { echo "FAIL: schema 2 save listed '$before' securities, loaded '$after'" >&2; exit 1; }
-	grep -E "MT-LEDGER STATS start .*archived=1 " "$base/run2.log" >/dev/null || { echo "FAIL: old headlines were not archived" >&2; grep "MT-LEDGER" "$base/run2.log" >&2; exit 1; }
-	grep -q "MT-LEDGER EDITION" "$base/run2.log" || { echo "FAIL: no edition after migration" >&2; exit 1; }
-	echo "PASS: migrate: schema 2 save with $before instruments loaded; old headlines archived; new editions published"
+	grep -E "MT-LEDGER STATS start .*archived=1 pages=1 " "$base/run2.log" >/dev/null || { echo "FAIL: old headlines were not archived on a page" >&2; grep "MT-LEDGER" "$base/run2.log" >&2; exit 1; }
+	echo "PASS: migrate schema 2: $before instruments loaded; old headlines archived on their own page; new editions published"
+
+	base="$(old_profile migrate3 "$SCHEMA3_REF" 3)"
+	echo "== migrate: one year with the schema 3 script ($SCHEMA3_REF)"
+	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 12)) -g
+	check_clean "$base/run1.log"
+	echo "== migrate: load that save with the current script"
+	switch_to_current "$base"
+	grep -h "saved instruments (schema 3)" "$base/run2.log" >/dev/null || { echo "FAIL: save was not loaded as schema 3" >&2; exit 1; }
+	archived=$(grep -h "MT-LEDGER UPGRADED" "$base/run2.log" | sed -E 's/.*editions=([0-9]+).*/\1/')
+	[[ -n "$archived" && "$archived" -gt 0 ]] || { echo "FAIL: no schema 3 editions were upgraded" >&2; grep "MT-LEDGER" "$base/run2.log" | head >&2; exit 1; }
+	grep -q "removed the schema 3 archive page" "$base/run2.log" || { echo "FAIL: schema 3 archive page was not removed" >&2; exit 1; }
+	grep -E "MT-LEDGER STATS start .*archived=$archived pages=$archived " "$base/run2.log" >/dev/null || { echo "FAIL: upgraded editions have no pages" >&2; grep "MT-LEDGER STATS" "$base/run2.log" >&2; exit 1; }
+	echo "PASS: migrate schema 3: $archived finished editions upgraded, each on its own page"
 }
 
 soak() {

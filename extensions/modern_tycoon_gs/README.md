@@ -2,7 +2,7 @@
 
 This GameScript is the first playable vertical slice of the Modern Tycoon fork. It runs on the supported OpenTTD GameScript API and prototypes economic rules before they are promoted into deterministic native C++ systems.
 
-Version 3 provides:
+Version 4 provides:
 
 - 1% company-equity lots with deterministic fundamental pricing;
 - production-linked securities for individual industries;
@@ -23,7 +23,7 @@ Producers record facts once in a bounded journal: a stable template ID, typed pa
 - **Industry**: openings and closures.
 - **Transport**: the company that delivered the most cargo last quarter.
 
-The Story Book has a front page with the latest edition and an archive page with the last 12 leads. Pop-up news is limited to major events (takeovers, bankruptcies) and at most one edition notice per quarter; the old script showed a pop-up for every listing and payout. Editions are also written to the script log (`MT-LEDGER ...`) for headless review.
+Every edition gets its own Story Book page (the last 12 are kept), rendered from `lang/*.txt` with formatted headings, real currency and translations (English and Norwegian Bokmal). Stories about an industry or a company headquarters are map links. A front page shows the latest lead and the back issues. Pop-up news is limited to major events (takeovers, bankruptcies) and at most one edition notice per quarter; the old script showed a pop-up for every listing and payout. Editions are also written to the script log (`MT-LEDGER ...`) for headless review.
 
 ## Install for play testing
 

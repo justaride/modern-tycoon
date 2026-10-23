@@ -1,0 +1,136 @@
+##plural 0
+# Transportavisen (Modern Tycoon Markets and News), norsk bokmål.
+# Hver streng må ha de samme kommandoene som english.txt, men skriv {STRING}
+# der english.txt har {RAW_STRING} eller {STRING1}-{STRING7} (krav fra strgen).
+
+STR_LEDGER_PAGE_TITLE       :Transportavisen nr. {NUM}
+STR_LEDGER_PAGE_TITLE_EARLIER:Transportavisen, tidligere saker
+STR_LEDGER_INDEX_TITLE      :Transportavisen
+STR_LEDGER_INDEX_INTRO      :{BIG_FONT}{BLACK}TRANSPORTAVISEN{}{NORMAL_FONT}{SILVER}Børs, selskaper, konkurrenter, industri og transport.{}{}{BLACK}Hver utgave har sin egen side. Bla med Forrige og Neste nederst i historieboka, eller velg en utgave i lista mellom dem.
+STR_LEDGER_INDEX_EMPTY      :{SILVER}Første utgave er under trykking.
+STR_LEDGER_INDEX_ARCHIVE    :{BIG_FONT}{BLACK}TIDLIGERE UTGAVER
+STR_LEDGER_MASTHEAD         :{BIG_FONT}{BLACK}TRANSPORTAVISEN{}{NORMAL_FONT}{SILVER}{STRING}
+STR_LEDGER_SECTION          :{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_SHOW_ON_MAP      :{BLACK}Vis på kartet
+STR_LEDGER_MORE             :{SILVER}+ {COMMA} mindre sak{P "" er} vises ikke
+
+STR_LEDGER_EDITION_LABEL    :Nr. {NUM}, {STRING} {NUM}
+STR_LEDGER_EDITION_EARLIER  :Tidligere saker{STRING}{STRING}{STRING}
+
+STR_LEDGER_MONTH_1          :januar
+STR_LEDGER_MONTH_2          :februar
+STR_LEDGER_MONTH_3          :mars
+STR_LEDGER_MONTH_4          :april
+STR_LEDGER_MONTH_5          :mai
+STR_LEDGER_MONTH_6          :juni
+STR_LEDGER_MONTH_7          :juli
+STR_LEDGER_MONTH_8          :august
+STR_LEDGER_MONTH_9          :september
+STR_LEDGER_MONTH_10         :oktober
+STR_LEDGER_MONTH_11         :november
+STR_LEDGER_MONTH_12         :desember
+
+STR_LEDGER_SECTION_MARKETS  :BØRS
+STR_LEDGER_SECTION_COMPANIES:SELSKAPER
+STR_LEDGER_SECTION_RIVALS   :KONKURRENTER
+STR_LEDGER_SECTION_INDUSTRY :INDUSTRI
+STR_LEDGER_SECTION_TRANSPORT:TRANSPORT
+STR_LEDGER_SECTION_EARLIER  :TIDLIGERE SAKER
+
+STR_LEDGER_LEAD_0           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_1           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_2           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_3           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_4           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_5           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_6           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_7           :{GOLD}HOVEDSAK{}{BIG_FONT}{BLACK}{STRING}
+
+STR_LEDGER_LINE_0           :{BLACK}- {STRING}
+STR_LEDGER_LINE_1           :{BLACK}- {STRING}
+STR_LEDGER_LINE_2           :{BLACK}- {STRING}
+STR_LEDGER_LINE_3           :{BLACK}- {STRING}
+STR_LEDGER_LINE_4           :{BLACK}- {STRING}
+STR_LEDGER_LINE_5           :{BLACK}- {STRING}
+STR_LEDGER_LINE_6           :{BLACK}- {STRING}
+STR_LEDGER_LINE_7           :{BLACK}- {STRING}
+
+STR_LEDGER_POPUP_0          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_1          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_2          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_3          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_4          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_5          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_6          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+STR_LEDGER_POPUP_7          :{BIG_FONT}{BLACK}Transportavisen nr. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Les hele utgaven i historieboka.
+
+STR_LEDGER_LATEST_0         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_1         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_2         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_3         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_4         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_5         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_6         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_7         :{GOLD}SISTE: {STRING}{}{BIG_FONT}{BLACK}{STRING}
+
+STR_LEDGER_ENTRY_0          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_1          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_2          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_3          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_4          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_5          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_6          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_7          :{BLACK}{STRING}: {SILVER}{STRING}
+STR_LEDGER_T_EXCHANGE_OPEN  :Modern Tycoon-børsen åpner med {COMMA} børsnotert{P "" e} verdipapir{P "" er}.
+STR_LEDGER_T_COMPANY_LISTED :{STRING} børsnoteres til {CURRENCY_LONG} per 1 %-post.
+STR_LEDGER_T_INDUSTRY_LISTED:{STRING} børsnoteres med verdi knyttet til transportert produksjon.
+STR_LEDGER_T_DELISTED       :{STRING} tas av børs; eierne får sluttkursen på {CURRENCY_LONG} per post.
+STR_LEDGER_T_DIVIDEND       :{STRING} betaler kvartalsutbytte på {CURRENCY_LONG} per 1 %-post.
+STR_LEDGER_T_DISTRIBUTION   :{STRING} betaler {CURRENCY_LONG} per post etter {COMMA} transportert{P "" e} enhet{P "" er} dette kvartalet.
+STR_LEDGER_T_MARKET_CLOSE   :Børsslutt: {STRING} leder på {CURRENCY_LONG} ({STRING}); {STRING} er svakest ({STRING}). {COMMA} verdipapir{P "" er} notert.
+STR_LEDGER_T_MARKET_CLOSE_ONE:Børsslutt: {STRING} på {CURRENCY_LONG} ({STRING}). {COMMA} verdipapir{P "" er} notert.
+STR_LEDGER_T_MERGER         :{STRING} kjøper {STRING}. Investeringsporteføljen følger med til ny eier.
+STR_LEDGER_T_COMPANY_FOUNDED:{STRING} er grunnlagt og går inn i transportmarkedet.
+STR_LEDGER_T_COMPANY_TROUBLE:{STRING} har økonomiske problemer og kan snart bli lagt ut for salg.
+STR_LEDGER_T_COMPANY_CLOSED :{STRING} har gått konkurs og legges ned.
+STR_LEDGER_T_VALUE_MILESTONE:{STRING} passerer en selskapsverdi på {CURRENCY_LONG}.
+STR_LEDGER_T_INDUSTRY_OPEN  :Ny {STRING} åpner: {STRING}.
+STR_LEDGER_T_INDUSTRY_CLOSE :{STRING} stenger portene.
+STR_LEDGER_T_INDUSTRY_CLOSE_UNLISTED:En industri utenfor børsen er nedlagt.
+STR_LEDGER_T_CARGO_LEADER   :{STRING} leverte mest gods forrige kvartal: {COMMA} enhet{P "" er}.
+STR_LEDGER_T_LEGACY         :{STRING}
+STR_LEDGER_T_UNKNOWN        :[{STRING}]
+
+STR_LEDGER_T_RIVAL_DESK     :Profil: {STRING}, {STRING}, har {COMMA} kjøretøy og er verdsatt til {CURRENCY_LONG}.
+STR_LEDGER_DESK_NORDLYS     :flyselskapet med norsk preg
+STR_LEDGER_DESK_FJELLBANEN  :godsbanen i fjellet
+STR_LEDGER_DESK_RAIL        :et jernbaneselskap
+STR_LEDGER_DESK_ROAD        :et transportfirma på vei
+STR_LEDGER_DESK_WATER       :et rederi
+STR_LEDGER_DESK_AIR         :et flyselskap
+STR_LEDGER_DESK_NONE        :et selskap uten kjøretøy
+
+STR_LEDGER_T_ENTRY_RAIL     :{STRING} starter med jernbane og {COMMA} tog.
+STR_LEDGER_T_ENTRY_ROAD     :{STRING} starter med veitransport og {COMMA} kjøretøy.
+STR_LEDGER_T_ENTRY_WATER    :{STRING} starter med sjøfart og {COMMA} skip.
+STR_LEDGER_T_ENTRY_AIR      :{STRING} starter med luftfart og {COMMA} fly.
+STR_LEDGER_T_GROWTH_RAIL    :{STRING} setter inn {COMMA} tog til ({COMMA} i drift).
+STR_LEDGER_T_GROWTH_ROAD    :{STRING} setter inn {COMMA} kjøretøy til ({COMMA} i drift).
+STR_LEDGER_T_GROWTH_WATER   :{STRING} setter inn {COMMA} skip til ({COMMA} i drift).
+STR_LEDGER_T_GROWTH_AIR     :{STRING} setter inn {COMMA} fly til ({COMMA} i drift).
+
+STR_LEDGER_T_PROFILE_OLD    :Profil: {STRING}, {STRING}, har {STRING} og er verdsatt til {CURRENCY_LONG}.
+STR_LEDGER_T_ENTRY_OLD      :{STRING} går inn i {STRING} med {COMMA} {STRING}.
+STR_LEDGER_T_GROWTH_OLD     :{STRING} setter inn {COMMA} {STRING} til ({COMMA} i drift).
+
+STR_LEDGER_NAMES_3          :{STRING}, {STRING} og {STRING}{STRING}
+STR_LEDGER_NAMES_MORE       :{STRING}, {STRING}, {STRING} og {COMMA} til
+STR_LEDGER_A_COMPANY_LISTED :{COMMA} selskaper børsnoteres: {STRING}.
+STR_LEDGER_A_INDUSTRY_LISTED:{COMMA} industrier børsnoteres: {STRING}.
+STR_LEDGER_A_INDUSTRY_OPEN  :{COMMA} nye industrier åpner, blant dem {STRING}.
+STR_LEDGER_A_RIVAL_GROWTH   :{COMMA} meldinger om vekst: {STRING} utvider flåten.
+STR_LEDGER_A_GENERIC        :{COMMA} saker: {STRING}.
+STR_LEDGER_A_COUNT          :{COMMA} lignende saker.
+STR_LEDGER_A_INDUSTRY_CLOSE_UNLISTED:{COMMA} industrier utenfor børsen er nedlagt.
+STR_LEDGER_A_DIVIDEND       :{COMMA} selskaper betaler utbytte; høyest er {STRING} med {CURRENCY_LONG} per post.
+STR_LEDGER_A_DISTRIBUTION   :{COMMA} industrier betaler utdeling; høyest er {STRING} med {CURRENCY_LONG} per post.

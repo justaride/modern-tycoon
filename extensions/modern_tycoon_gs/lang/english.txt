@@ -1,0 +1,146 @@
+##plural 0
+# The Transport Ledger (Modern Tycoon Markets and News).
+#
+# Parameter counting: GameScript strings nested with {STRINGn} must consume
+# exactly n parameters. The wrappers below come in eight variants (_0 to _7),
+# one per parameter count of the nested story text. The script picks the
+# variant, so translations only need to keep each string's own commands.
+
+# ---------------------------------------------------------------- page furniture
+STR_LEDGER_PAGE_TITLE       :The Transport Ledger, No. {NUM}
+STR_LEDGER_PAGE_TITLE_EARLIER:The Transport Ledger, earlier reports
+STR_LEDGER_INDEX_TITLE      :The Transport Ledger
+STR_LEDGER_INDEX_INTRO      :{BIG_FONT}{BLACK}THE TRANSPORT LEDGER{}{NORMAL_FONT}{SILVER}Markets, companies, rivals, industry and transport.{}{}{BLACK}Every edition has its own page. Turn the pages with Previous and Next at the bottom of the Story Book, or pick an edition from the list between them.
+STR_LEDGER_INDEX_EMPTY      :{SILVER}The first edition is being typeset.
+STR_LEDGER_INDEX_ARCHIVE    :{BIG_FONT}{BLACK}BACK ISSUES
+STR_LEDGER_MASTHEAD         :{BIG_FONT}{BLACK}THE TRANSPORT LEDGER{}{NORMAL_FONT}{SILVER}{STRING3}
+STR_LEDGER_SECTION          :{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_SHOW_ON_MAP      :{BLACK}Show on map
+STR_LEDGER_MORE             :{SILVER}+ {COMMA} smaller report{P "" s} not shown
+
+# Edition label "No. 12, March 1995". The legacy label takes three empty strings so both consume three parameters.
+STR_LEDGER_EDITION_LABEL    :No. {NUM}, {STRING} {NUM}
+STR_LEDGER_EDITION_EARLIER  :Earlier reports{RAW_STRING}{RAW_STRING}{RAW_STRING}
+
+STR_LEDGER_MONTH_1          :January
+STR_LEDGER_MONTH_2          :February
+STR_LEDGER_MONTH_3          :March
+STR_LEDGER_MONTH_4          :April
+STR_LEDGER_MONTH_5          :May
+STR_LEDGER_MONTH_6          :June
+STR_LEDGER_MONTH_7          :July
+STR_LEDGER_MONTH_8          :August
+STR_LEDGER_MONTH_9          :September
+STR_LEDGER_MONTH_10         :October
+STR_LEDGER_MONTH_11         :November
+STR_LEDGER_MONTH_12         :December
+
+STR_LEDGER_SECTION_MARKETS  :MARKETS
+STR_LEDGER_SECTION_COMPANIES:COMPANIES
+STR_LEDGER_SECTION_RIVALS   :RIVAL WATCH
+STR_LEDGER_SECTION_INDUSTRY :INDUSTRY
+STR_LEDGER_SECTION_TRANSPORT:TRANSPORT
+STR_LEDGER_SECTION_EARLIER  :EARLIER REPORTS
+
+# ---------------------------------------------------------------- wrappers
+STR_LEDGER_LEAD_0           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LEAD_1           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING1}
+STR_LEDGER_LEAD_2           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING2}
+STR_LEDGER_LEAD_3           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING3}
+STR_LEDGER_LEAD_4           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING4}
+STR_LEDGER_LEAD_5           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING5}
+STR_LEDGER_LEAD_6           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING6}
+STR_LEDGER_LEAD_7           :{GOLD}LEAD STORY{}{BIG_FONT}{BLACK}{STRING7}
+
+STR_LEDGER_LINE_0           :{BLACK}- {STRING}
+STR_LEDGER_LINE_1           :{BLACK}- {STRING1}
+STR_LEDGER_LINE_2           :{BLACK}- {STRING2}
+STR_LEDGER_LINE_3           :{BLACK}- {STRING3}
+STR_LEDGER_LINE_4           :{BLACK}- {STRING4}
+STR_LEDGER_LINE_5           :{BLACK}- {STRING5}
+STR_LEDGER_LINE_6           :{BLACK}- {STRING6}
+STR_LEDGER_LINE_7           :{BLACK}- {STRING7}
+
+STR_LEDGER_POPUP_0          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_1          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING1}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_2          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING2}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_3          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING3}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_4          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING4}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_5          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING5}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_6          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING6}{}{SILVER}Read the full edition in the Story Book.
+STR_LEDGER_POPUP_7          :{BIG_FONT}{BLACK}The Transport Ledger, No. {NUM}{}{NORMAL_FONT}{STRING7}{}{SILVER}Read the full edition in the Story Book.
+
+STR_LEDGER_LATEST_0         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING}
+STR_LEDGER_LATEST_1         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING1}
+STR_LEDGER_LATEST_2         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING2}
+STR_LEDGER_LATEST_3         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING3}
+STR_LEDGER_LATEST_4         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING4}
+STR_LEDGER_LATEST_5         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING5}
+STR_LEDGER_LATEST_6         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING6}
+STR_LEDGER_LATEST_7         :{GOLD}LATEST: {STRING3}{}{BIG_FONT}{BLACK}{STRING7}
+
+STR_LEDGER_ENTRY_0          :{BLACK}{STRING3}: {SILVER}{STRING}
+STR_LEDGER_ENTRY_1          :{BLACK}{STRING3}: {SILVER}{STRING1}
+STR_LEDGER_ENTRY_2          :{BLACK}{STRING3}: {SILVER}{STRING2}
+STR_LEDGER_ENTRY_3          :{BLACK}{STRING3}: {SILVER}{STRING3}
+STR_LEDGER_ENTRY_4          :{BLACK}{STRING3}: {SILVER}{STRING4}
+STR_LEDGER_ENTRY_5          :{BLACK}{STRING3}: {SILVER}{STRING5}
+STR_LEDGER_ENTRY_6          :{BLACK}{STRING3}: {SILVER}{STRING6}
+STR_LEDGER_ENTRY_7          :{BLACK}{STRING3}: {SILVER}{STRING7}
+# ---------------------------------------------------------------- stories
+STR_LEDGER_T_EXCHANGE_OPEN  :The Modern Tycoon Exchange opens with {COMMA} listed securit{P y ies}.
+STR_LEDGER_T_COMPANY_LISTED :{RAW_STRING} lists on the exchange at {CURRENCY_LONG} per 1% lot.
+STR_LEDGER_T_INDUSTRY_LISTED:{RAW_STRING} receives an exchange listing tied to transported production.
+STR_LEDGER_T_DELISTED       :{RAW_STRING} is delisted; holders are paid the final quote of {CURRENCY_LONG} per lot.
+STR_LEDGER_T_DIVIDEND       :{RAW_STRING} declares a quarterly dividend of {CURRENCY_LONG} per 1% lot.
+STR_LEDGER_T_DISTRIBUTION   :{RAW_STRING} pays {CURRENCY_LONG} per lot after moving {COMMA} cargo unit{P "" s} this quarter.
+STR_LEDGER_T_MARKET_CLOSE   :Exchange close: {RAW_STRING} leads at {CURRENCY_LONG} ({RAW_STRING}); {RAW_STRING} is weakest ({RAW_STRING}). {COMMA} securit{P y ies} listed.
+STR_LEDGER_T_MARKET_CLOSE_ONE:Exchange close: {RAW_STRING} at {CURRENCY_LONG} ({RAW_STRING}). {COMMA} securit{P y ies} listed.
+STR_LEDGER_T_MERGER         :{RAW_STRING} takes over {RAW_STRING}. The acquired investment portfolio moves to the new owner.
+STR_LEDGER_T_COMPANY_FOUNDED:{RAW_STRING} is founded and joins the transport market.
+STR_LEDGER_T_COMPANY_TROUBLE:{RAW_STRING} is in financial trouble and may soon be offered for sale.
+STR_LEDGER_T_COMPANY_CLOSED :{RAW_STRING} has gone bankrupt and closes down.
+STR_LEDGER_T_VALUE_MILESTONE:{RAW_STRING} passes a company value of {CURRENCY_LONG}.
+STR_LEDGER_T_INDUSTRY_OPEN  :A new {RAW_STRING} opens: {RAW_STRING}.
+STR_LEDGER_T_INDUSTRY_CLOSE :{RAW_STRING} closes its gates.
+STR_LEDGER_T_INDUSTRY_CLOSE_UNLISTED:An unlisted industry has closed.
+STR_LEDGER_T_CARGO_LEADER   :{RAW_STRING} delivered the most cargo last quarter: {COMMA} unit{P "" s}.
+STR_LEDGER_T_LEGACY         :{RAW_STRING}
+STR_LEDGER_T_UNKNOWN        :[{RAW_STRING}]
+
+STR_LEDGER_T_RIVAL_DESK     :Profile: {RAW_STRING}, {STRING}, runs {COMMA} vehicle{P "" s} and is valued at {CURRENCY_LONG}.
+STR_LEDGER_DESK_NORDLYS     :the Norwegian-flavoured airline
+STR_LEDGER_DESK_FJELLBANEN  :the mountain rail freight operator
+STR_LEDGER_DESK_RAIL        :a railway company
+STR_LEDGER_DESK_ROAD        :a road haulier
+STR_LEDGER_DESK_WATER       :a shipping line
+STR_LEDGER_DESK_AIR         :an airline
+STR_LEDGER_DESK_NONE        :a company without vehicles
+
+STR_LEDGER_T_ENTRY_RAIL     :{RAW_STRING} enters rail transport with {COMMA} train{P "" s}.
+STR_LEDGER_T_ENTRY_ROAD     :{RAW_STRING} enters road transport with {COMMA} road vehicle{P "" s}.
+STR_LEDGER_T_ENTRY_WATER    :{RAW_STRING} enters shipping with {COMMA} ship{P "" s}.
+STR_LEDGER_T_ENTRY_AIR      :{RAW_STRING} enters aviation with {COMMA} aircraft.
+STR_LEDGER_T_GROWTH_RAIL    :{RAW_STRING} adds {COMMA} train{P "" s} ({COMMA} in service).
+STR_LEDGER_T_GROWTH_ROAD    :{RAW_STRING} adds {COMMA} road vehicle{P "" s} ({COMMA} in service).
+STR_LEDGER_T_GROWTH_WATER   :{RAW_STRING} adds {COMMA} ship{P "" s} ({COMMA} in service).
+STR_LEDGER_T_GROWTH_AIR     :{RAW_STRING} adds {COMMA} aircraft ({COMMA} in service).
+
+# Schema 3 journal entries kept English words in their parameters.
+STR_LEDGER_T_PROFILE_OLD    :Profile: {RAW_STRING}, {RAW_STRING}, runs {RAW_STRING} and is valued at {CURRENCY_LONG}.
+STR_LEDGER_T_ENTRY_OLD      :{RAW_STRING} enters {RAW_STRING} with {COMMA} {RAW_STRING}.
+STR_LEDGER_T_GROWTH_OLD     :{RAW_STRING} adds {COMMA} {RAW_STRING} ({COMMA} in service).
+
+# ---------------------------------------------------------------- folded reports
+# Name lists always consume four parameters: three names plus an empty string or the number of others.
+STR_LEDGER_NAMES_3          :{RAW_STRING}, {RAW_STRING} and {RAW_STRING}{RAW_STRING}
+STR_LEDGER_NAMES_MORE       :{RAW_STRING}, {RAW_STRING}, {RAW_STRING} and {COMMA} more
+STR_LEDGER_A_COMPANY_LISTED :{COMMA} companies list on the exchange: {STRING4}.
+STR_LEDGER_A_INDUSTRY_LISTED:{COMMA} industries receive exchange listings: {STRING4}.
+STR_LEDGER_A_INDUSTRY_OPEN  :{COMMA} new industries open, including {STRING4}.
+STR_LEDGER_A_RIVAL_GROWTH   :{COMMA} expansion reports: {STRING4} are growing their fleets.
+STR_LEDGER_A_GENERIC        :{COMMA} reports: {STRING4}.
+STR_LEDGER_A_COUNT          :{COMMA} similar reports.
+STR_LEDGER_A_INDUSTRY_CLOSE_UNLISTED:{COMMA} unlisted industries have closed.
+STR_LEDGER_A_DIVIDEND       :{COMMA} companies declare dividends; the richest is {RAW_STRING} at {CURRENCY_LONG} per lot.
+STR_LEDGER_A_DISTRIBUTION   :{COMMA} industries pay distributions; the richest is {RAW_STRING} at {CURRENCY_LONG} per lot.
