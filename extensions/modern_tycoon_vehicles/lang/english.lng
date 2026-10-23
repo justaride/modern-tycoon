@@ -1,0 +1,10 @@
+##grflangid 0x01
+
+STR_GRF_NAME            :Modern Tycoon Trains (development preview)
+STR_GRF_DESC            :{ORANGE}Modern Tycoon Trains{}{BLACK}First original vehicles of the Modern Tycoon project. Fictional designs, procedurally drawn. Development preview: not release-approved.{}{}License: GPL v2
+STR_GRF_URL             :https://github.com/justaride/modern-tycoon
+
+STR_NAME_TINDE_DM6      :Tinde DM6 Dual-Mode
+STR_INFO_TINDE_DM6      :Fictional design based on a contemporary archetype: a dual-mode freight locomotive. Runs on any normal or electrified track.
+STR_NAME_TINDE_HOPPER   :Tinde Bulk Hopper
+STR_INFO_TINDE_HOPPER   :Open bulk wagon for coal, ore, grain and other bulk cargo.

@@ -1,0 +1,8 @@
+# Stable identifiers. Never reuse an ID for a different object once a public
+# save can contain it. The GRF ID must be checked against the live NewGRF
+# registry before the first public release (not done yet).
+# SPDX-License-Identifier: GPL-2.0-only
+grfid: MTTR
+vehicles:
+  0: mttr_rail_2016_dualmode_freight
+  1: mttr_rail_2016_bulk_hopper

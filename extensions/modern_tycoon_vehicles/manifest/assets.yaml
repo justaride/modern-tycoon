@@ -1,0 +1,49 @@
+# Provenance for every asset in this pack (see VEHICLES_AND_ART.md).
+# SPDX-License-Identifier: GPL-2.0-only
+- asset_id: MT-A-000001
+  vehicle_id: mttr_rail_2016_dualmode_freight
+  files:
+    - art/source/trains/mttr_rail_2016_dualmode_freight.py
+    - art/source/trains/common.py
+    - tools/render.py
+  exports: generated/sprites/mttr_rail_2016_dualmode_freight.png (reproducible, not committed)
+  kind: original_procedural_sprite
+  method: >-
+    Primitive solids described in Python source, ray cast by tools/render.py
+    with OpenTTD's isometric projection, quantised to the DOS palette.
+    No reference image, photo, game sprite or image-generation model is input.
+  authors:
+    - name: Modern Tycoon contributors (written with Claude Code)
+      contribution: model source, renderer, palette mapping
+  license: GPL-2.0-only
+  source_asset: art/source/trains/mttr_rail_2016_dualmode_freight.py
+  created: 2026-10-23
+  derived_from: []
+  references: [MT-S-000001, MT-S-000003]
+  review:
+    provenance: pending
+    visual: pending
+    legal: pending
+  sha256: pending
+- asset_id: MT-A-000002
+  vehicle_id: mttr_rail_2016_bulk_hopper
+  files:
+    - art/source/trains/mttr_rail_2016_bulk_hopper.py
+    - art/source/trains/common.py
+    - tools/render.py
+  exports: generated/sprites/mttr_rail_2016_bulk_hopper_{empty,loaded}.png (reproducible, not committed)
+  kind: original_procedural_sprite
+  method: Same as MT-A-000001.
+  authors:
+    - name: Modern Tycoon contributors (written with Claude Code)
+      contribution: model source, renderer, palette mapping
+  license: GPL-2.0-only
+  source_asset: art/source/trains/mttr_rail_2016_bulk_hopper.py
+  created: 2026-10-23
+  derived_from: []
+  references: [MT-S-000002, MT-S-000003]
+  review:
+    provenance: pending
+    visual: pending
+    legal: pending
+  sha256: pending

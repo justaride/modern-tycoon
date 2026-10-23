@@ -1,0 +1,75 @@
+# Modern Tycoon Trains: vehicle records (draft schema 0, see VEHICLES_AND_ART.md).
+# The NML is generated from this file by tools/build_pack.py.
+# SPDX-License-Identifier: GPL-2.0-only
+schema: 0
+grf:
+  grfid: MTTR
+  version: 1
+  min_compatible_version: 1
+vehicles:
+  - id: mttr_rail_2016_dualmode_freight
+    numeric_id: 0
+    kind: engine
+    pack: trains
+    mode: rail
+    era: contemporary
+    evidence_class: contemporary_archetype
+    archetype: four-axle double-cab dual-mode (overhead electric + diesel) freight locomotive
+    intro_year: 2016
+    retire_year: null
+    role: freight
+    traction: dual_mode
+    speed_kmh: 120
+    power_kw: 3200
+    tractive_effort_kn: 300
+    empty_mass_t: 90
+    capacity: 0
+    cost_factor: 42
+    running_cost_factor: 120
+    balance_note: >-
+      Hand-tuned until the balance generator exists. Strong but not dominant:
+      less top speed than electric express engines, more pull than vanilla diesels.
+      Dual-mode is modelled as a standard-rail (RAIL) engine so it runs on any
+      normal or electrified track; the separate electric performance is not
+      simulated yet.
+    reliability_class: early_adopter
+    reliability_decay: 20
+    model_life_years: 35
+    vehicle_life_years: 30
+    cargo_labels: []
+    art: mttr_rail_2016_dualmode_freight
+    asset_manifest: MT-A-000001
+    sources: [MT-S-000001]
+    strings:
+      name: STR_NAME_TINDE_DM6
+      info: STR_INFO_TINDE_DM6
+  - id: mttr_rail_2016_bulk_hopper
+    numeric_id: 1
+    kind: wagon
+    pack: trains
+    mode: rail
+    era: contemporary
+    evidence_class: contemporary_archetype
+    archetype: four-axle open bulk wagon
+    intro_year: 2015
+    retire_year: null
+    role: bulk_freight
+    speed_kmh: 120
+    empty_mass_t: 22
+    capacity: 40
+    loading_speed: 10
+    cost_factor: 8
+    running_cost_factor: 0
+    balance_note: Hand-tuned; capacity in game units, kept legible next to vanilla hoppers.
+    reliability_class: proven
+    reliability_decay: 20
+    model_life_years: 40
+    vehicle_life_years: 40
+    refit: generic bulk class (CC_BULK); passengers, mail, liquids, refrigerated and armoured cargo excluded
+    default_cargo: COAL
+    art: mttr_rail_2016_bulk_hopper
+    asset_manifest: MT-A-000002
+    sources: [MT-S-000002]
+    strings:
+      name: STR_NAME_TINDE_HOPPER
+      info: STR_INFO_TINDE_HOPPER
