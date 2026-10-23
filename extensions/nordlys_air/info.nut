@@ -9,8 +9,9 @@ class NordlysAirInfo extends AIInfo {
 	function GetAuthor()      { return "Modern Tycoon contributors"; }
 	function GetName()        { return "Nordlys Air"; }
 	function GetShortName()   { return "NLAR"; }
-	function GetDescription() { return "A calm, profit-minded airline that links the biggest towns on the map, adds planes where passengers pile up and retires planes that lose money."; }
-	function GetVersion()     { return 1; }
+	function GetDescription() { return "A Norwegian airline that links the biggest towns, grows where passengers pile up, renews its fleet, moves busy routes to bigger airports and flies mail. Personality: cautious, balanced, aggressive or random."; }
+	function GetVersion()     { return 2; }
+	function MinVersionToLoad() { return 1; }
 	function GetAPIVersion()  { return "15"; }
 	function GetDate()        { return "2026-10-23"; }
 	function GetURL()         { return "https://github.com/justaride/modern-tycoon"; }
@@ -19,6 +20,20 @@ class NordlysAirInfo extends AIInfo {
 
 	function GetSettings()
 	{
+		AddSetting({
+			name = "personality",
+			description = "Personality (how boldly the company borrows and grows)",
+			min_value = 0,
+			max_value = 3,
+			default_value = 3,
+			flags = 0
+		});
+		AddLabels("personality", {
+			_0 = "Forsiktig (cautious)",
+			_1 = "Balansert (balanced)",
+			_2 = "Aggressiv (aggressive)",
+			_3 = "Tilfeldig (random)"
+		});
 		AddSetting({
 			name = "max_routes",
 			description = "Maximum number of air routes",

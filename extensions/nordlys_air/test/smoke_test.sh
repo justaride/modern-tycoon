@@ -9,6 +9,9 @@
 # Usage: extensions/nordlys_air/test/smoke_test.sh [start_year] [years]
 # Env:   OPENTTD_BIN  path to the openttd binary (default: build/openttd)
 #        KEEP_WORK=1  keep the temporary profile for inspection
+#        PERSONALITY  0 cautious, 1 balanced, 2 aggressive, 3 random (default 3)
+#        RUN1_AI_DIR  play run 1 with another copy of the AI (e.g. an older version),
+#                     then load that save with this version in run 2 (upgrade test)
 #
 # SPDX-License-Identifier: GPL-2.0-only
 set -euo pipefail
@@ -42,7 +45,7 @@ if [[ "$(uname)" == Darwin ]]; then
 else
 	ln -s "$PROFILE" "$WORK/xdg/openttd"
 fi
-ln -s "$AI_DIR" "$PROFILE/ai/nordlys_air"
+ln -s "${RUN1_AI_DIR:-$AI_DIR}" "$PROFILE/ai/nordlys_air"
 
 cat > "$PROFILE/test.cfg" <<EOF
 [misc]
@@ -63,7 +66,7 @@ max_no_competitors = 1
 competitors_interval = 0
 
 [ai_players]
-"Nordlys Air" =
+"Nordlys Air" = personality=${PERSONALITY:-3}
 EOF
 
 # Save every month, so the last save is at most one month old when the run ends.
@@ -96,12 +99,13 @@ SAVE="$PROFILE/save/nordlys_smoke.sav"
 [[ -f "$SAVE" ]] || { echo "FAIL: no save game written" >&2; exit 1; }
 
 echo "== Run 2: load the save and play one more year"
+ln -sfn "$AI_DIR" "$PROFILE/ai/nordlys_air"
 TICKS=$TICKS_PER_YEAR
 run_game "$WORK/run2.log" -g "$SAVE" || { echo "FAIL: loaded game exited with an error" >&2; tail -30 "$WORK/run2.log" >&2; exit 1; }
 check_clean "$WORK/run2.log"
 grep -E "Ruter i drift: [1-9]" "$WORK/run2.log" >/dev/null || { echo "FAIL: routes were lost after load" >&2; grep "\[script\]" "$WORK/run2.log" | tail -20 >&2; exit 1; }
 
 echo "== Nordlys Air log (both runs)"
-grep -h -E "Ny rute|Årsrapport|pensjoneres|styrtet|gjeldfri|Ruter i drift|sliter" "$WORK/run1.log" "$WORK/run2.log" \
-	| sed -E 's/^.*\[script\] *//' | head -60
+grep -h -E "Ny rute|Årsrapport|pensjoneres|styrtet|gjeldfri|Ruter i drift|sliter|byttes ut|større flyplasser|Postfly|Personlighet| fly, overskudd" "$WORK/run1.log" "$WORK/run2.log" \
+	| sed -E 's/^.*\[script\] *//' | head -80
 echo "PASS: $ROUTES routes built, state survived save and load"
