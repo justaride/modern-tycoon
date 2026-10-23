@@ -286,3 +286,28 @@ def contact_sheet(named_sets, path, scale=4):
 			img.paste(big, ((rx + xoff) * scale, (ry + yoff) * scale), big)
 			draw.text(((col * cell_w + 2) * scale, (oy + label_h) * scale), direction, fill=(90, 96, 110))
 	img.save(path)
+
+
+OPPOSITE_PAIRS = [('N', 'S'), ('NE', 'SW'), ('E', 'W'), ('SE', 'NW')]
+
+
+def opposite_differences(sprites):
+	"""Pixels that differ between each pair of opposite directions."""
+	by_dir = {d: img for d, img, _, _ in sprites}
+	result = {}
+	for a, b in OPPOSITE_PAIRS:
+		ia, ib = by_dir[a], by_dir[b]
+		if ia.size != ib.size:
+			result[(a, b)] = ia.width * ia.height
+		else:
+			result[(a, b)] = sum(1 for p, q in zip(ia.tobytes(), ib.tobytes()) if p != q)
+	return result
+
+
+def check_directional(name, sprites, min_pixels=12):
+	"""Fail if a vehicle that must show its direction looks the same both ways."""
+	diffs = opposite_differences(sprites)
+	bad = {pair: n for pair, n in diffs.items() if n < min_pixels}
+	if bad:
+		raise SystemExit(f"{name}: opposite directions too similar (need >= {min_pixels} px): {bad}")
+	return diffs

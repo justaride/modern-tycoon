@@ -15,6 +15,8 @@ vehicles:
     era: contemporary
     evidence_class: contemporary_archetype
     archetype: four-axle double-cab dual-mode (overhead electric + diesel) freight locomotive
+    # Must look different when driving the other way (head/tail lamps, pantographs).
+    directional: true
     intro_year: 2016
     retire_year: null
     role: freight
@@ -51,6 +53,8 @@ vehicles:
     era: contemporary
     evidence_class: contemporary_archetype
     archetype: four-axle open bulk wagon
+    # Symmetric wagon: the same from both ends is correct.
+    directional: false
     intro_year: 2015
     retire_year: null
     role: bulk_freight

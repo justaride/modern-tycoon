@@ -16,6 +16,12 @@ Rules of thumb:
 - One accent. Company colour carries identity; Signal yellow is for safety (cab fronts), not decoration.
 - Light comes from the upper left, as in the base set: top faces brightest, the screen-left side next, the screen-right side darkest.
 - No black outlines. Edges come from shading steps between faces.
+- Direction must be readable. OpenTTD draws each vehicle with the sprite for the
+  direction it is moving in, so the model's front (+u) always leads. Single-cab
+  vehicles put the cab there; double-cab vehicles show it like real ones: white
+  head lamps only at the leading end, red tail lamps at the trailing end, and the
+  trailing pantograph raised. `build.sh` fails if opposite directions of a
+  vehicle marked `directional` differ by fewer than 12 pixels.
 
 ## Palette
 

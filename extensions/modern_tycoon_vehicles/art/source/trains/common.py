@@ -15,7 +15,8 @@ MATERIALS = {
 	'bogie': (34, 34, 36),         # bogies and wheels
 	'roof': (150, 154, 158),       # Granite roof
 	'roof_dark': (96, 100, 104),   # roof equipment
-	'lamp': (252, 250, 236),       # head lamps
+	'lamp': (252, 250, 236),       # head lamps (leading end)
+	'tail_lamp': (224, 36, 28),    # tail lamps (trailing end)
 	'granite': (150, 154, 158),    # wagon body
 	'granite_dark': (108, 112, 116),  # wagon ribs
 	'interior': (70, 66, 62),      # open wagon interior

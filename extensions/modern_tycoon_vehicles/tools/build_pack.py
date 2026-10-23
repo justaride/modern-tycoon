@@ -139,6 +139,9 @@ def main():
 		art = importlib.import_module(v['art'])
 		if v['kind'] == 'engine':
 			sprites = render.render_set(art.MODEL, MATERIALS)
+			if v.get('directional', True):
+				diffs = render.check_directional(v['id'], sprites)
+				print(f"{v['id']}: opposite directions differ by " + ', '.join(f'{a}/{b}={n}px' for (a, b), n in diffs.items()))
 			png = f"generated/sprites/{v['art']}.png"
 			rows = render.pack_strip(sprites, os.path.join(PACK, png))
 			ss = f"ss_{v['id']}"

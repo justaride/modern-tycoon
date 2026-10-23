@@ -24,6 +24,9 @@ Every pixel comes from code in this folder:
 - `tools/render.py`: projects a model with OpenTTD's isometric formula for all 8
   directions, shades it with an upper-left light and maps it to the DOS palette.
   Company-colour areas use the remap range, so each company sees its own colour.
+- Direction check: the Tinde DM6 has a cab at both ends, so its direction is shown by white head
+  lamps at the leading end, red tail lamps at the trailing end and the raised trailing pantograph.
+  The build fails if opposite directions of a `directional` vehicle differ by fewer than 12 pixels.
 - `tools/measure_anchors.py`: reads sprite sizes and offsets (numbers only) from
   OpenGFX train sprites so our sprites sit on the rails the same way.
 
