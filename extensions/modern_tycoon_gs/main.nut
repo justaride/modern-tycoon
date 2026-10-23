@@ -1,5 +1,6 @@
 require("news.nut");
 require("market.nut");
+require("pricing.nut");
 require("fixture.nut");
 
 class ModernTycoon extends GSController {
@@ -46,7 +47,7 @@ function ModernTycoon::Start()
 
 function ModernTycoon::Save()
 {
-    if (this.market == null) return { schema = 3 };
+    if (this.market == null) return { schema = 4 };
     local data = this.market.GetSaveData();
     if (this.fixture != null) data.fixture <- this.fixture.state;
     return data;

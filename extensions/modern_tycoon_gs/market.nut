@@ -14,6 +14,7 @@ class ModernMarket {
     newspaper_body = -1;
     self_test_done = false;
     is_fresh = true;
+    price_seed = 0;         // Seed for the deterministic price noise; drawn once, then saved.
     settlement_faults = 0;  // Test seam: number of upcoming credits to fail on purpose. Never saved.
 
     constructor(saved_state)
@@ -26,6 +27,8 @@ class ModernMarket {
         this.self_test_done = false;
         this.is_fresh = saved_state == null;
         this.settlement_faults = 0;
+        this.price_seed = (saved_state != null && saved_state.rawin("price_seed"))
+            ? saved_state.price_seed : GSBase.RandRange(0x7FFFFFFF);
 
         if (saved_state == null) {
             this.news = TransportLedger(null, null);
@@ -78,7 +81,8 @@ class ModernMarket {
     function GetSaveData()
     {
         return {
-            schema = 3,
+            schema = 4,
+            price_seed = this.price_seed,
             instruments = this.instruments,
             portfolios = this.portfolios,
             news = this.news.GetSaveData(),
@@ -147,6 +151,11 @@ class ModernMarket {
             return;
         }
 
+        if (event_type == GSEvent.ET_COMPANY_IN_TROUBLE) {
+            this.ReactToTrouble(GSEventCompanyInTrouble.Convert(event).GetCompanyID());
+            return;
+        }
+
         if (event_type == GSEvent.ET_COMPANY_NEW ||
                 event_type == GSEvent.ET_COMPANY_BANKRUPT ||
                 event_type == GSEvent.ET_INDUSTRY_OPEN ||
@@ -203,7 +212,14 @@ class ModernMarket {
                     price = price,
                     previous_price = price,
                     issued = 0,
-                    metric = 0
+                    metric = 0,
+                    fair = price,
+                    fundamental = price,
+                    sentiment = 0,
+                    shock = 0,
+                    expected = 0,
+                    has_expected = false,
+                    quarter_open = price
                 });
                 this.news.Record("markets", MT_SEV_NORMAL, "company_listed", [this.GetCompanyName(company_id), price], GSNews.NR_NONE, 0, null, false);
             }
@@ -232,7 +248,14 @@ class ModernMarket {
                     previous_price = price,
                     issued = 0,
                     metric = metric,
-                    quarter_metric = 0
+                    quarter_metric = 0,
+                    fair = price,
+                    fundamental = price,
+                    sentiment = 0,
+                    shock = 0,
+                    expected = 0,
+                    has_expected = false,
+                    quarter_open = price
                 });
                 listed_industries++;
                 this.news.Record("markets", MT_SEV_MINOR, "industry_listed", [this.GetIndustryName(industry_id)], GSNews.NR_INDUSTRY, industry_id, null, false);
@@ -275,27 +298,31 @@ class ModernMarket {
         }
     }
 
+    /* Monthly quotes; the model is described in pricing.nut. */
     function UpdatePrices()
     {
+        local date = GSDate.GetCurrentDate();
+        local month_key = GSDate.GetYear(date) * 12 + GSDate.GetMonth(date);
+        local quarter_start = ((GSDate.GetMonth(date) - 1) % 3) == 0;
         foreach (instrument in this.instruments) {
             instrument.previous_price = instrument.price;
-            local fundamental = 0;
             if (instrument.kind == MT_KIND_COMPANY) {
                 instrument.name = this.GetCompanyName(instrument.object_id);
-                fundamental = this.CompanyFundamentalPrice(instrument.object_id);
             } else {
                 instrument.name = this.GetIndustryName(instrument.object_id);
                 instrument.metric = this.GetIndustryTransportMetric(instrument.object_id);
                 instrument.quarter_metric += instrument.metric;
-                fundamental = this.IndustryFundamentalPrice(instrument.object_id);
             }
-
-            local gap = fundamental - instrument.price;
-            local movement = gap / 4;
-            local cap = this.MaxValue(1, instrument.price / 10);
-            movement = this.Clamp(movement, -cap, cap);
-            instrument.price = this.MaxValue(1, instrument.price + movement);
+            local fundamental = this.FundamentalOf(instrument);
+            this.EnsurePricingState(instrument, fundamental);
+            if (instrument.kind == MT_KIND_COMPANY) {
+                if (quarter_start) this.ReactToResults(instrument);
+            } else {
+                this.ReactToProduction(instrument);
+            }
+            this.MovePrice(instrument, fundamental, month_key);
         }
+        if (quarter_start) this.RecordQuarterMovers();
     }
 
     function CompanyFundamentalPrice(company_id)
@@ -627,6 +654,7 @@ class ModernMarket {
         local detail = kind + "  " + (portfolio.selected + 1) + "/" + this.instruments.len() +
             "\n" + instrument.name +
             "\nPrice per lot: " + this.FormatMoney(instrument.price) + " (" + this.FormatSigned(change_percent) + "%)" +
+            (instrument.rawin("fair") ? "\nFair value: " + this.FormatMoney(instrument.fair) + " | Market mood: " + MT_Percent(instrument.sentiment) : "") +
             "\nYour holding: " + held_lots + " lots | Player-held float: " + instrument.issued +
             "\n" + (instrument.kind == MT_KIND_COMPANY
                 ? "One lot represents 1% economic exposure; self-trading is prohibited."
@@ -678,10 +706,15 @@ class ModernMarket {
 
     function EnsureInstrumentSchema()
     {
+        local migrated = 0;
         foreach (instrument in this.instruments) {
             if (!instrument.rawin("metric")) instrument.metric <- 0;
             if (instrument.kind == MT_KIND_INDUSTRY && !instrument.rawin("quarter_metric")) instrument.quarter_metric <- 0;
+            if (!instrument.rawin("fair")) migrated++;
+            this.EnsurePricingState(instrument, this.FundamentalOf(instrument));
         }
+        if (!this.is_fresh) GSLog.Info("MT-PRICING state restored for " + (this.instruments.len() - migrated) +
+            " securities, started from fair value for " + migrated);
     }
 
     function EnsurePortfolioSchema(portfolio)

@@ -2,7 +2,7 @@ class ModernTycoonInfo extends GSInfo {
     function GetAuthor()      { return "Modern Tycoon contributors"; }
     function GetName()        { return "Modern Tycoon Markets and News"; }
     function GetDescription() { return "A playable market laboratory with company equity, production-linked industry securities, portfolios, dividends, and a persistent transport newspaper."; }
-    function GetVersion()     { return 3; }
+    function GetVersion()     { return 4; }
     function MinVersionToLoad() { return 1; }
     function GetDate()        { return "2026-10-23"; }
     function CreateInstance() { return "ModernTycoon"; }
@@ -110,6 +110,15 @@ class ModernTycoonInfo extends GSInfo {
             min_value = 0,
             max_value = 2,
             step_size = 1
+        });
+        AddSetting({
+            name = "developer_price_log",
+            description = "Log every monthly quote with its fair value and mood (for price tests)",
+            easy_value = 0,
+            medium_value = 0,
+            hard_value = 0,
+            custom_value = 0,
+            flags = CONFIG_BOOLEAN | CONFIG_DEVELOPER
         });
     }
 }
