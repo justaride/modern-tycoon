@@ -11,6 +11,10 @@ import statistics
 import sys
 
 LINE = re.compile(r"MT-PRICE (\d+) (\S+) price=(-?\d+) fair=(-?\d+) fundamental=(-?\d+) sentiment=(-?\d+)")
+OPEN = re.compile(r" open=([01])")
+# A company that opened for trading may not rise more than this in one month or in its first year.
+MAX_OPEN_MONTHLY_RISE = 1.0
+MAX_FIRST_YEAR_RETURN = 3.0
 
 
 def main():
@@ -20,6 +24,7 @@ def main():
         skip = int(sys.argv[sys.argv.index("--skip-months") + 1])
 
     series = {}
+    opened = {}
     with open(path, encoding="utf-8", errors="replace") as handle:
         for line in handle:
             match = LINE.search(line)
@@ -27,6 +32,9 @@ def main():
                 continue
             month, sec, price, fair, fundamental, sentiment = match.groups()
             series.setdefault(sec, []).append((int(month), int(price), int(fair), int(fundamental), int(sentiment)))
+            flag = OPEN.search(line)
+            if flag and flag.group(1) == "1" and sec not in opened:
+                opened[sec] = int(month)
 
     if not series:
         print("FAIL: no MT-PRICE lines")
@@ -94,7 +102,31 @@ def main():
             first, last = points[0], points[-1]
             print(f"  {sec}: {first[1]} -> {last[1]} (fundamental {first[3]} -> {last[3]}), mood now {last[4] / 100:+.1f}%")
 
+    # What a buyer could earn once a company opened for trading (logs without the open flag count every month as open).
+    open_rises, first_years = [], []
+    for sec, points in series.items():
+        if not sec.startswith("C:"):
+            continue
+        start = opened.get(sec, points[0][0] if not opened else None)
+        if start is None:
+            continue
+        by_month = {m: p for m, p, *_ in points}
+        for month in sorted(by_month):
+            if month > start and month - 1 in by_month and by_month[month - 1] > 0:
+                open_rises.append((by_month[month] - by_month[month - 1]) / by_month[month - 1])
+        if start + 12 in by_month and by_month[start] > 0:
+            first_years.append((sec, (by_month[start + 12] - by_month[start]) / by_month[start]))
+    if opened:
+        print(f"listing periods: " + " ".join(f"{sec} opened after {month - series[sec][0][0] + 1} months" for sec, month in sorted(opened.items()) if sec.startswith("C:")))
+    print(f"after opening: biggest monthly rise={max(open_rises, default=0):+.1%}; first-year returns: " +
+          (" ".join(f"{sec} {ret:+.0%}" for sec, ret in first_years) or "none"))
+
     failures = []
+    if open_rises and max(open_rises) > MAX_OPEN_MONTHLY_RISE:
+        failures.append(f"an open company rose {max(open_rises):+.0%} in one month (limit {MAX_OPEN_MONTHLY_RISE:+.0%})")
+    for sec, ret in first_years:
+        if ret > MAX_FIRST_YEAR_RETURN:
+            failures.append(f"{sec} returned {ret:+.0%} in its first year of trading (limit {MAX_FIRST_YEAR_RETURN:+.0%})")
     if not 0.8 <= median_ratio <= 1.25:
         failures.append(f"median price/fundamental {median_ratio:.3f} is not within 0.80..1.25")
     if ratios[0] < 0.2 or ratios[-1] > 5.0:

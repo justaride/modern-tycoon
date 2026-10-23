@@ -95,6 +95,8 @@ function MT_RenderEvent(event)
     switch (event.template) {
         case "exchange_open":   return "The Modern Tycoon Exchange opens with " + p[0] + " listed securities.";
         case "company_listed":  return p[0] + " lists on the exchange at " + MT_Money(p[1]) + " per 1% lot.";
+        case "company_ipo_planned": return p[0] + " is quoted on the exchange; its shares open for trading in " + p[1] + ", after a track record.";
+        case "company_ipo":     return p[0] + " opens for trading at " + MT_Money(p[1]) + " per 1% lot (fair value " + MT_Money(p[2]) + ").";
         case "industry_listed": return p[0] + " receives an exchange listing tied to transported production.";
         case "delisted":        return p[0] + " is delisted; holders are paid the final quote of " + MT_Money(p[1]) + " per lot.";
         case "dividend":        return p[0] + " declares a quarterly dividend of " + MT_Money(p[1]) + " per 1% lot.";
@@ -145,6 +147,8 @@ function MT_RenderAggregate(template, events)
 
     switch (template) {
         case "company_listed":  return count + " companies list on the exchange: " + named + ".";
+        case "company_ipo_planned": return count + " new companies are quoted ahead of trading: " + named + ".";
+        case "company_ipo":     return count + " companies open for trading: " + named + ".";
         case "industry_listed": return count + " industries receive exchange listings: " + named + ".";
         case "industry_open":   return count + " new industries open, including " + named + ".";
         case "industry_close_unlisted": return count + " unlisted industries have closed.";

@@ -14,6 +14,7 @@
 #   pricing  Ten years with Nordlys Air and Fjellbanen Gods: quotes track
 #            fundamentals, rise and fall, stay bounded, and buy-and-hold can lose.
 #   replay   The same game run twice gives identical quotes (determinism).
+#   ipo      New companies are quoted at once but open for trading only after a listing period.
 #   soak     The original 150,000-tick soak with the built-in buy/distribution/sell self-test.
 #   all      Everything above.
 #
@@ -32,6 +33,7 @@ NORDLYS_DIR="$ROOT/extensions/nordlys_air"
 FJELLBANEN_DIR="$ROOT/extensions/fjellbanen_gods"
 SCHEMA2_REF=926376b84  # Last commit with the schema 2 market lab (before The Transport Ledger).
 SCHEMA3_REF=7cf977433  # Schema 3: The Transport Ledger, before deterministic pricing.
+SCHEMA4_REF=6c3740cf4  # Schema 4: deterministic pricing, before listing periods and the market board.
 BIN="${OPENTTD_BIN:-$ROOT/build/openttd}"
 TICKS_PER_MONTH=2250
 SCENARIO="${1:-all}"
@@ -102,7 +104,7 @@ check_clean() {
 
 strip_log() { sed -E 's/^.*\[script:[0-9]+\] *(\[[0-9]+\] \[.\] )?//'; }
 
-GS_DEFAULTS="company_dividend_percent=25,company_market=1,industry_market=1,industry_yield_per_unit=10,max_industries=12,transaction_fee_bp=100"
+GS_DEFAULTS="company_dividend_percent=25,ipo_months=0,company_market=1,industry_market=1,industry_yield_per_unit=10,max_industries=12,transaction_fee_bp=100"
 
 # fixture <merger|delist>
 fixture() {
@@ -196,8 +198,10 @@ migrate() {
 		|| { echo "FAIL: save was not loaded as version $version" >&2; exit 1; }
 	local loaded; loaded=$(grep -h "saved instruments (schema $schema)" "$base/run2.log" | sed -E 's/.*loaded ([0-9]+) saved.*/\1/')
 	[[ -n "$loaded" && "$loaded" -gt 0 ]] || { echo "FAIL: no instruments loaded from the schema $schema save" >&2; exit 1; }
-	grep -E "MT-PRICING state restored for 0 securities, started from fair value for $loaded" "$base/run2.log" >/dev/null \
-		|| { echo "FAIL: pricing state was not initialised for all $loaded securities" >&2; grep "MT-PRICING" "$base/run2.log" >&2; exit 1; }
+	local expect_pricing="state restored for 0 securities, started from fair value for $loaded"
+	[[ "$schema" -ge 4 ]] && expect_pricing="state restored for $loaded securities, started from fair value for 0"
+	grep -E "MT-PRICING $expect_pricing" "$base/run2.log" >/dev/null \
+		|| { echo "FAIL: expected MT-PRICING $expect_pricing" >&2; grep "MT-PRICING" "$base/run2.log" >&2; exit 1; }
 	# Loaded games keep the script settings stored in the save, so the price log stays off; the exchange close shows quotes moved.
 	grep -q "Exchange close:" "$base/run2.log" || { echo "FAIL: no exchange close after migration" >&2; exit 1; }
 	grep -q "MT-LEDGER EDITION" "$base/run2.log" || { echo "FAIL: no edition after migration" >&2; exit 1; }
@@ -210,7 +214,11 @@ migrate() {
 		local kept; kept=$(grep -h "MT-LEDGER STATS start" "$base/run2.log" | sed -E 's/.*editions=([0-9]+).*/\1/')
 		[[ -n "$kept" && "$kept" -ge 6 ]] || { echo "FAIL: Ledger editions not kept (start editions='$kept')" >&2; grep "MT-LEDGER STATS" "$base/run2.log" >&2; exit 1; }
 	fi
-	echo "PASS: migrate: schema $schema save from $ref with $loaded instruments loaded; quotes start from fair value; Ledger continues"
+	if [[ "$schema" -ge 4 ]]; then
+		# Listings from before schema 5 have no opening month and stay open for trading.
+		if grep -q "not open for trading yet" "$base/run2.log"; then echo "FAIL: an old listing was closed for trading" >&2; exit 1; fi
+	fi
+	echo "PASS: migrate: schema $schema save from $ref with $loaded instruments loaded; pricing state carried over; Ledger continues"
 }
 
 # rivals_profile <name>: a profile with Nordlys Air, Fjellbanen Gods and one idle test company.
@@ -222,7 +230,7 @@ rivals_profile() {
 	ln -s "$FJELLBANEN_DIR" "$base/profile/ai/fjellbanen_gods"
 	write_cfg "$base" 1995 "\"Nordlys Air\" =
 \"Fjellbanen Gods\" =
-\"Modern Tycoon Test Company\" =" "$GS_DEFAULTS,news_frequency=1,developer_fixture=0,developer_self_test=0,developer_price_log=1"
+\"Modern Tycoon Test Company\" =" "${GS_DEFAULTS/ipo_months=0/ipo_months=12},news_frequency=1,developer_fixture=0,developer_self_test=0,developer_price_log=1"
 	echo "$base"
 }
 
@@ -261,6 +269,33 @@ replay() {
 	echo "PASS: replay: $count quotes identical across two runs of the same game"
 }
 
+# A new company is quoted at once but cannot be bought before its opening month.
+ipo() {
+	local base; base="$(new_profile ipo)"
+	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
+	ln -s "$TEST_AI_DIR" "$base/profile/ai/modern_tycoon_test_ai"
+	write_cfg "$base" 1995 "\"Modern Tycoon Test Company\" =
+\"Modern Tycoon Test Company\" =" "${GS_DEFAULTS/ipo_months=0/ipo_months=6},news_frequency=2,developer_self_test=1,developer_fixture=0,developer_price_log=1"
+	echo "== ipo: nine months with a six-month listing period"
+	run_game "$base" "$base/run1.log" $((TICKS_PER_MONTH * 9)) -g
+	check_clean "$base/run1.log"
+	grep -q "MT-IPO PASS" "$base/run1.log" || { echo "FAIL: no refused buy before the opening month" >&2; grep -E "self-test|MT-IPO" "$base/run1.log" >&2; exit 1; }
+	grep -q "self-test passed" "$base/run1.log" || { echo "FAIL: self-test did not pass with locked companies" >&2; exit 1; }
+	grep -q "shares open for trading in" "$base/run1.log" || { echo "FAIL: the Ledger did not report a planned listing" >&2; exit 1; }
+	grep -q "opens for trading at" "$base/run1.log" || { echo "FAIL: the Ledger did not report an opening" >&2; exit 1; }
+	# Months from the first quote until each company's first open quote.
+	local waits; waits=$(grep -o "MT-PRICE [0-9]* C:[0-9]* .*open=[01]" "$base/run1.log" | awk '
+		{ m=$2; id=$3; o=substr($NF,6); if (!(id in first)) first[id]=m; if (o==1 && !(id in opened)) opened[id]=m }
+		END { for (id in first) printf "%s=%s ", id, (id in opened) ? opened[id]-first[id]+1 : "never" }')
+	echo "-- months quoted before trading opened: $waits"
+	[[ "$waits" != *never* && "$waits" =~ =[4-7]\  ]] || { echo "FAIL: unexpected opening months: $waits" >&2; exit 1; }
+	echo "== ipo: reload and play two more months"
+	run_game "$base" "$base/run2.log" $((TICKS_PER_MONTH * 2)) -g "$base/profile/save/mt_test.sav"
+	check_clean "$base/run2.log"
+	if grep -q "opens for trading at" "$base/run2.log"; then echo "FAIL: an opening was announced twice after reload" >&2; exit 1; fi
+	echo "PASS: ipo: buys refused before the opening month, openings announced once ($waits)"
+}
+
 soak() {
 	local base; base="$(new_profile soak)"
 	ln -s "$GS_DIR" "$base/profile/game/modern_tycoon_gs"
@@ -277,10 +312,11 @@ soak() {
 case "$SCENARIO" in
 	merger|delist) fixture "$SCENARIO" ;;
 	news) news ;;
-	migrate) migrate "$SCHEMA2_REF" 2 2; migrate "$SCHEMA3_REF" 3 3 ;;
+	migrate) migrate "$SCHEMA2_REF" 2 2; migrate "$SCHEMA3_REF" 3 3; migrate "$SCHEMA4_REF" 4 4 ;;
 	pricing) pricing ;;
 	replay) replay ;;
+	ipo) ipo ;;
 	soak) soak ;;
-	all) fixture merger; fixture delist; news; migrate "$SCHEMA2_REF" 2 2; migrate "$SCHEMA3_REF" 3 3; pricing; replay; soak ;;
+	all) fixture merger; fixture delist; news; migrate "$SCHEMA2_REF" 2 2; migrate "$SCHEMA3_REF" 3 3; migrate "$SCHEMA4_REF" 4 4; pricing; replay; ipo; soak ;;
 	*) echo "unknown scenario: $SCENARIO" >&2; exit 2 ;;
 esac

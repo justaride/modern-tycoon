@@ -40,7 +40,7 @@ MT_MIN_TRACKED_PRODUCTION <- 40;  // Ignore swings at tiny industries.
 MT_GROWTH_STEP_LIMIT_BP <- 1500;  // One month's fundamental growth counts at most +/-15%.
 MT_GROWTH_MONTHS_PRICED <- 6;     // Expected growth priced this many months ahead.
 MT_PREMIUM_MIN_BP <- -2500;
-MT_PREMIUM_MAX_BP <- 5000;
+MT_PREMIUM_MAX_BP <- 10000;    // A fast grower can be priced at up to twice its fair value.
 
 function MT_Abs(value) { return value < 0 ? -value : value; }
 
@@ -118,7 +118,8 @@ function ModernMarket::MovePrice(instrument, fundamental, month_key)
 
     if (GSController.GetSetting("developer_price_log")) {
         GSLog.Info("MT-PRICE " + month_key + " " + instrument.id + " price=" + instrument.price + " fair=" + fair +
-            " fundamental=" + fundamental + " sentiment=" + instrument.sentiment + " premium=" + premium);
+            " fundamental=" + fundamental + " sentiment=" + instrument.sentiment + " premium=" + premium +
+            " open=" + (this.IsOpenForTrading(instrument) ? 1 : 0));
     }
 }
 
@@ -216,4 +217,119 @@ function ModernMarket::RecordQuarterMovers()
     }
     this.news.Record("markets", MT_SEV_NORMAL, "market_quarter", [best.name, best_bp, worst.name, worst_bp, ups, downs],
         GSNews.NR_NONE, 0, "quarter_movers", false);
+}
+
+/*
+ * Listing rules and market overview (schema 5).
+ *
+ * A new company is quoted from the day it is founded, but its shares only
+ * open for trading after `ipo_months` of reported results. Before that the
+ * quote is indicative: a company with no track record would otherwise list
+ * at the floor price and multiply while its first routes start to earn,
+ * which made buying every newcomer close to riskless. Saves from older
+ * versions have no opening month, so their listings stay open.
+ */
+MT_HISTORY_MONTHS <- 13;          // Monthly closes kept per security (12 months of change).
+MT_MONTH_NAMES <- ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function MT_CurrentMonthKey()
+{
+    local date = GSDate.GetCurrentDate();
+    return GSDate.GetYear(date) * 12 + GSDate.GetMonth(date);
+}
+
+/* Month key (year * 12 + month, month 1..12) as "Mar 1997". */
+function MT_MonthName(month_key)
+{
+    return MT_MONTH_NAMES[(month_key - 1) % 12] + " " + ((month_key - 1) / 12);
+}
+
+/* Called once when a company is first listed. */
+function ModernMarket::ScheduleIpo(instrument)
+{
+    local months = GSController.GetSetting("ipo_months");
+    if (months < 0) months = 0;
+    instrument.opens <- MT_CurrentMonthKey() + months;
+    instrument.ipo_announced <- months == 0;
+}
+
+function ModernMarket::IsOpenForTrading(instrument)
+{
+    if (instrument.kind != MT_KIND_COMPANY || !instrument.rawin("opens")) return true;
+    return MT_CurrentMonthKey() >= instrument.opens;
+}
+
+/* Monthly: announce companies whose shares opened this month. */
+function ModernMarket::AnnounceIpos()
+{
+    foreach (instrument in this.instruments) {
+        if (!instrument.rawin("opens") || instrument.ipo_announced || !this.IsOpenForTrading(instrument)) continue;
+        instrument.ipo_announced = true;
+        this.news.Record("markets", MT_SEV_NORMAL, "company_ipo", [instrument.name, instrument.price, instrument.fair],
+            GSNews.NR_NONE, 0, null, false);
+    }
+}
+
+/* Monthly: remember the close, keeping a bounded window. */
+function ModernMarket::RecordHistory(instrument)
+{
+    if (!instrument.rawin("history")) instrument.history <- [];
+    instrument.history.append(instrument.price);
+    while (instrument.history.len() > MT_HISTORY_MONTHS) instrument.history.remove(0);
+}
+
+/* "12 months: +35.20% | range 1,000 - 4,200", or null before there is history. */
+function ModernMarket::HistoryLine(instrument)
+{
+    if (!instrument.rawin("history") || instrument.history.len() < 2) return null;
+    local first = instrument.history[0];
+    local low = first, high = first;
+    foreach (price in instrument.history) {
+        if (price < low) low = price;
+        if (price > high) high = price;
+    }
+    return (instrument.history.len() - 1) + " months: " + MT_Percent(MT_ChangeBp(first, instrument.price)) +
+        " | range " + this.FormatMoney(low) + " - " + this.FormatMoney(high);
+}
+
+/* The selected security is remembered by id, so a listing or delisting does not shift what the buttons act on. */
+function ModernMarket::SelectedIndex(portfolio)
+{
+    if (this.instruments.len() == 0) return -1;
+    if (portfolio.rawin("selected_id")) {
+        local index = this.FindInstrumentIndex(portfolio.selected_id);
+        if (index >= 0) {
+            portfolio.selected = index;
+            return index;
+        }
+    }
+    if (portfolio.selected < 0 || portfolio.selected >= this.instruments.len()) portfolio.selected = 0;
+    this.Select(portfolio, portfolio.selected);
+    return portfolio.selected;
+}
+
+function ModernMarket::Select(portfolio, index)
+{
+    portfolio.selected = index;
+    if (!portfolio.rawin("selected_id")) portfolio.selected_id <- "";
+    portfolio.selected_id = this.instruments[index].id;
+}
+
+/* Developer self-test: a buy before the opening month is refused and moves no money or lots. */
+function ModernMarket::SelfTestIpoRule(company_id)
+{
+    foreach (instrument in this.instruments) {
+        if (this.IsOpenForTrading(instrument) || instrument.object_id == company_id) continue;
+        local cash_before = GSCompany.GetBankBalance(company_id);
+        local issued_before = instrument.issued;
+        local price_before = instrument.price;
+        if (this.BuyOneLot(company_id, instrument) || GSCompany.GetBankBalance(company_id) != cash_before ||
+                instrument.issued != issued_before || instrument.price != price_before) {
+            GSLog.Error("Modern Tycoon self-test failed: " + instrument.id + " traded before its opening month");
+            return false;
+        }
+        GSLog.Info("MT-IPO PASS buy of " + instrument.id + " refused before " + MT_MonthName(instrument.opens));
+        return true;
+    }
+    return true;
 }
