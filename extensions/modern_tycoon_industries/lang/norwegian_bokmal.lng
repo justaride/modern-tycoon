@@ -1,0 +1,22 @@
+##grflangid 0x2f
+
+STR_GRF_NAME            :Modern Tycoon romindustri (utviklingsversjon)
+STR_GRF_DESC            :{ORANGE}Modern Tycoon romindustri{}{BLACK}En ny industrikjede: olje blir rakettdrivstoff, romhavna skyter raketter ut til asteroidebeltet og lander dem igjen fulle av asteroidemalm, og asteroideraffineriet gjør malmen om til varer. Alle bygninger og animasjoner er tegnet med kode. Utviklingsversjon.{}{}Lisens: GPL v2
+STR_GRF_URL             :https://github.com/justaride/modern-tycoon
+STR_ERR_TOYLAND         :Modern Tycoon romindustri trenger olje og varer, som lekeland-klimaet ikke har.
+
+STR_CARGO_RFUL          :Rakettdrivstoff
+STR_CARGO_RFUL_UNIT     :Rakettdrivstoff
+STR_CARGO_RFUL_QTY      :{VOLUME} rakettdrivstoff
+STR_CARGO_RFUL_ABBREV   :{TINYFONT}RD
+STR_CARGO_AORE          :Asteroidemalm
+STR_CARGO_AORE_UNIT     :Asteroidemalm
+STR_CARGO_AORE_QTY      :{WEIGHT} asteroidemalm
+STR_CARGO_AORE_ABBREV   :{TINYFONT}AM
+
+STR_IND_FUEL_PLANT      :Rakettdrivstoffverk
+STR_IND_SPACEPORT       :Romhavn
+STR_IND_REFINERY        :Asteroideraffineri
+STR_STATION_FUEL_PLANT  :{STRING} drivstoffverk
+STR_STATION_SPACEPORT   :{STRING} romhavn
+STR_STATION_REFINERY    :{STRING} raffineri

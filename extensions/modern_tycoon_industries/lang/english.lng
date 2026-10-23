@@ -1,0 +1,22 @@
+##grflangid 0x01
+
+STR_GRF_NAME            :Modern Tycoon Space Industry (development preview)
+STR_GRF_DESC            :{ORANGE}Modern Tycoon Space Industry{}{BLACK}A new industry chain: oil becomes rocket fuel, the spaceport launches rockets to the asteroid belt and lands them again full of asteroid ore, and the asteroid refinery turns the ore into goods. All buildings and animations are procedurally drawn. Development preview.{}{}License: GPL v2
+STR_GRF_URL             :https://github.com/justaride/modern-tycoon
+STR_ERR_TOYLAND         :Modern Tycoon Space Industry needs oil and goods, which the toyland climate does not have.
+
+STR_CARGO_RFUL          :Rocket Fuel
+STR_CARGO_RFUL_UNIT     :Rocket Fuel
+STR_CARGO_RFUL_QTY      :{VOLUME} of rocket fuel
+STR_CARGO_RFUL_ABBREV   :{TINYFONT}RF
+STR_CARGO_AORE          :Asteroid Ore
+STR_CARGO_AORE_UNIT     :Asteroid Ore
+STR_CARGO_AORE_QTY      :{WEIGHT} of asteroid ore
+STR_CARGO_AORE_ABBREV   :{TINYFONT}AO
+
+STR_IND_FUEL_PLANT      :Rocket Fuel Plant
+STR_IND_SPACEPORT       :Spaceport
+STR_IND_REFINERY        :Asteroid Refinery
+STR_STATION_FUEL_PLANT  :{STRING} Fuel Works
+STR_STATION_SPACEPORT   :{STRING} Spaceport
+STR_STATION_REFINERY    :{STRING} Refinery
