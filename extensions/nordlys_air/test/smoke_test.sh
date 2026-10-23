@@ -75,7 +75,7 @@ printf 'save nordlys_smoke\nschedule on-next-calendar-month monthly.scr\n' > "$P
 
 run_game() {
 	local log="$1"; shift
-	(cd "$PROFILE" && HOME="$WORK/home" XDG_DATA_HOME="$WORK/xdg" XDG_CONFIG_HOME="$WORK/xdg" \
+	(cd "$WORK" && HOME="$WORK/home" XDG_DATA_HOME="$WORK/xdg" XDG_CONFIG_HOME="$WORK/xdg" \
 		"$BIN" -x -c "$PROFILE/test.cfg" -v null:ticks="$TICKS" -s null -m null -d script=4 "$@") > "$log" 2>&1
 }
 

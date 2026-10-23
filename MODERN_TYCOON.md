@@ -18,6 +18,7 @@ Start here:
 - [Curated content playtest](docs/modern_tycoon/CURATED_CONTENT.md)
 - [Playable GameScript prototype](extensions/modern_tycoon_gs/README.md)
 - [Nordlys Air, the first AI player](extensions/nordlys_air/README.md)
+- [Fjellbanen Gods, rail freight AI with its own pathfinder](extensions/fjellbanen_gods/README.md)
 
 This work intentionally remains separate from the official OpenTTD contribution path. Official OpenTTD prioritizes a stable, classic-compatible core and explicitly does not accept AI-generated code. Modern Tycoon is therefore maintained as its own GPL-2.0 fork; no generated change from this repository should be submitted upstream.
 
