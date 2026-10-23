@@ -2,13 +2,13 @@ class ModernTycoonInfo extends GSInfo {
     function GetAuthor()      { return "Modern Tycoon contributors"; }
     function GetName()        { return "Modern Tycoon Markets and News"; }
     function GetDescription() { return "A playable market laboratory with company equity, production-linked industry securities, portfolios, dividends, and a persistent transport newspaper."; }
-    function GetVersion()     { return 2; }
+    function GetVersion()     { return 3; }
     function MinVersionToLoad() { return 1; }
-    function GetDate()        { return "2026-07-16"; }
+    function GetDate()        { return "2026-10-23"; }
     function CreateInstance() { return "ModernTycoon"; }
     function GetShortName()   { return "MTMK"; }
     function GetAPIVersion()  { return "15"; }
-    function GetUrl()         { return "https://github.com/OpenTTD/OpenTTD"; }
+    function GetUrl()         { return "https://github.com/justaride/modern-tycoon"; }
 
     function GetSettings()
     {
@@ -80,7 +80,7 @@ class ModernTycoonInfo extends GSInfo {
         });
         AddSetting({
             name = "news_frequency",
-            description = "Market news frequency (0 major only, 1 quarterly, 2 monthly)",
+            description = "Ledger edition frequency (0 major news only, 1 quarterly, 2 monthly)",
             easy_value = 1,
             medium_value = 1,
             hard_value = 2,
@@ -98,6 +98,18 @@ class ModernTycoonInfo extends GSInfo {
             hard_value = 0,
             custom_value = 0,
             flags = CONFIG_BOOLEAN | CONFIG_DEVELOPER
+        });
+        AddSetting({
+            name = "developer_fixture",
+            description = "Run a market lifecycle fixture (1 merger, 2 delist); mutates company finances",
+            easy_value = 0,
+            medium_value = 0,
+            hard_value = 0,
+            custom_value = 0,
+            flags = CONFIG_DEVELOPER,
+            min_value = 0,
+            max_value = 2,
+            step_size = 1
         });
     }
 }
